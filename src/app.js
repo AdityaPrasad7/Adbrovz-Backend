@@ -70,6 +70,13 @@ app.get('/', (req, res) => {
 });
 
 /**
+ * Favicon handler (prevents 404 errors from browsers)
+ */
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
+/**
  * Rate limiting
  */
 app.use('/api', (req, res, next) => {
