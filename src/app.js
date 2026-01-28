@@ -54,6 +54,22 @@ if (config.NODE_ENV !== 'test') {
 }
 
 /**
+ * Root route (must be before /api middleware)
+ */
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Adbrovz API Server',
+    version: config.API_VERSION,
+    endpoints: {
+      health: '/health',
+      api: `/api/${config.API_VERSION}`,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
  * Rate limiting
  */
 app.use('/api', (req, res, next) => {
@@ -76,22 +92,6 @@ app.get('/api', (req, res) => {
 app.use('/api', limiter);
 
 console.log(`📡 Registering routes for API version: ${config.API_VERSION}`);
-
-/**
- * Root route
- */
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Adbrovz API Server',
-    version: config.API_VERSION,
-    endpoints: {
-      health: '/health',
-      api: `/api/${config.API_VERSION}`,
-    },
-    timestamp: new Date().toISOString(),
-  });
-});
 
 /**
  * Health check
