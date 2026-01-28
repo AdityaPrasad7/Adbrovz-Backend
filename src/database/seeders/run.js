@@ -1,12 +1,15 @@
 const mongoose = require('mongoose');
 const config = require('../../config/env');
+const seedAdmins = require('./admin.seeder');
 
 // Placeholder for seeder runner
 const runSeeders = async () => {
   try {
     await mongoose.connect(config.MONGODB_URI);
     console.log('Running seeders...');
-    // TODO: Implement seeder logic
+
+    await seedAdmins();
+
     console.log('Seeders completed');
     process.exit(0);
   } catch (error) {

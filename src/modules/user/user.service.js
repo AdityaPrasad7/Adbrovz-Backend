@@ -72,23 +72,10 @@ const deleteUser = async (userId, req = null) => {
     });
   }
 
-  // Delete related data first (to comply with Play Store/App Store guidelines)
-  const Booking = require('../../models/Booking.model');
-  const Notification = require('../../models/Notification.model');
-  const AuditLog = require('../../models/AuditLog.model');
-  
-  // Delete all user bookings
-  await Booking.deleteMany({ user: userId });
-  
-  // Delete all user notifications
-  await Notification.deleteMany({ user: userId, userModel: 'User' });
-  
-  // Delete user audit logs (optional - you may want to keep these for compliance)
-  // await AuditLog.deleteMany({ user: userId, userModel: 'User' });
-  
   // Delete user
   await User.findByIdAndDelete(userId);
   
+  // TODO: Delete related data (bookings, notifications, etc.)
   return user;
 };
 

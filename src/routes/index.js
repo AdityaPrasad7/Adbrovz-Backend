@@ -17,6 +17,15 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Welcome message
+router.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to Adbrovz API',
+    version: 'v1.0.0',
+    documentation: 'https://api.adbrovz.com/docs',
+  });
+});
+
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);

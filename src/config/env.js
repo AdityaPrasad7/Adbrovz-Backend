@@ -3,7 +3,7 @@ require('dotenv').config();
 const config = {
   // Server
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT, 10) || 3001,
+  PORT: parseInt(process.env.PORT, 10) || 4000,
   API_VERSION: process.env.API_VERSION || 'v1',
 
   // Database

@@ -36,6 +36,7 @@ const userSignup = async ({ phoneNumber, name, email, pin, confirmPin, acceptedP
   const otpExpiry = config.OTP_EXPIRE_MINUTES * 60;
 
   // Store OTP in cache
+  console.log(`[DEBUG] Setting Signup OTP for User: ${phoneNumber}, Key: ${otpKey}, OTP: ${otp}`);
   await cacheService.set(otpKey, otp, otpExpiry);
 
   // Send OTP via SMS
@@ -172,6 +173,7 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
   const otpExpiry = config.OTP_EXPIRE_MINUTES * 60;
 
   // Store ONLY OTP in cache for verification
+  console.log(`[DEBUG] Setting Signup OTP for User (Complete): ${phoneNumber}, Key: ${otpKey}, OTP: ${otp}`);
   await cacheService.set(otpKey, otp, otpExpiry);
 
   // Send OTP via SMS
@@ -372,6 +374,105 @@ const adminSignup = async ({ username, name, email, password, confirmPassword })
   };
 };
 
+/**
+ * Admin Login
+ * @param {string} username
+ * @param {string} password
+ * @param {Object} req - Request object for audit logging
+ */
+const adminLogin = async ({ username, password }, req = null) => {
+  const admin = await Admin.findOne({ username }).select('+password');
+
+  if (!admin) {
+    throw new ApiError(401, MESSAGES.AUTH.INVALID_CREDENTIALS);
+  }
+
+  if (!admin.isActive) {
+    throw new ApiError(403, 'Account is disabled. Please contact Super Admin.');
+  }
+
+  const isPasswordValid = await comparePassword(password, admin.password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, MESSAGES.AUTH.INVALID_CREDENTIALS);
+  }
+
+  // Generate tokens
+  const token = generateToken({ userId: admin._id, role: admin.role });
+  const refreshToken = generateRefreshToken({ userId: admin._id });
+
+  // Update last login and history
+  admin.lastLogin = new Date();
+  if (req) {
+    const { ip, userAgent } = auditService.getRequestInfo(req);
+    admin.loginHistory.push({
+      timestamp: new Date(),
+      ip,
+      userAgent,
+    });
+
+    // Audit log
+    await auditService.createAuditLog({
+      action: 'login',
+      userId: admin._id,
+      userModel: 'Admin',
+      details: {
+        method: 'username_password',
+      },
+      ip,
+      userAgent,
+    });
+  }
+  await admin.save();
+
+  return {
+    admin: {
+      id: admin._id,
+      username: admin.username,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    },
+    token,
+    refreshToken,
+  };
+};
+
+/**
+ * Super Admin Reset Admin Password
+ */
+const superAdminResetPassword = async (adminId, { newPassword, confirmPassword }, req = null) => {
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(400, 'Passwords do not match');
+  }
+
+  const admin = await Admin.findById(adminId);
+  if (!admin) {
+    throw new ApiError(404, 'Admin not found');
+  }
+
+  admin.password = await hashPassword(newPassword);
+  await admin.save();
+
+  // Audit log
+  if (req) {
+    const { ip, userAgent } = auditService.getRequestInfo(req);
+    await auditService.createAuditLog({
+      action: 'profile_updated',
+      userId: admin._id,
+      userModel: 'Admin',
+      details: {
+        updateType: 'PASSWORD_RESET_BY_SUPER_ADMIN',
+        performerId: req.user?.userId,
+      },
+      ip,
+      userAgent,
+    });
+  }
+
+  return { message: 'Admin password reset successfully' };
+};
+
 // ======================== VERIFY OTP (for user/vendor signup) ========================
 const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
   let model, otpKey, userIdField;
@@ -403,6 +504,8 @@ const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
 
   // Verify OTP
   const storedOTP = await cacheService.get(otpKey);
+  console.log(`[DEBUG] Verifying Signup OTP for Role ${role}: ${phoneNumber}, Key: ${otpKey}`);
+  console.log(`[DEBUG] Stored OTP: ${storedOTP}, Provided OTP: ${otp}`);
 
   if (!storedOTP || storedOTP !== otp) {
     throw new ApiError(400, MESSAGES.AUTH.INVALID_OTP);
@@ -720,6 +823,8 @@ module.exports = {
   completeUserSignup,
   vendorSignup,
   adminSignup,
+  adminLogin,
+  superAdminResetPassword,
   verifySignupOTP,
   login,
   sendOTP,

@@ -7,6 +7,7 @@ const {
   validateCompleteUserSignup,
   validateVendorSignup,
   validateAdminSignup,
+  validateAdminLogin,
   validateLogin,
   validateInitiateLogin,
   validateCompleteLogin,
@@ -16,6 +17,8 @@ const {
   validateCompleteResetPIN,
 } = require('../../validators/auth.validator');
 const { authLimiter, otpLimiter } = require('../../middlewares/rateLimiter.middleware');
+const { authenticate, authorize } = require('../../middlewares/auth.middleware');
+const { ROLES } = require('../../constants/roles');
 
 // ======================== USER ROUTES ========================
 router.post('/users/signup', authLimiter, validateUserSignup, authController.userSignup);
@@ -41,6 +44,8 @@ router.post('/vendors/logout', authController.vendorLogout);
 
 // ======================== ADMIN ROUTES ========================
 router.post('/admins/signup', authLimiter, validateAdminSignup, authController.adminSignup);
+router.post('/admins/login', authLimiter, validateAdminLogin, authController.adminLogin);
+router.patch('/admins/reset-password/:adminId', authenticate, authorize(ROLES.SUPER_ADMIN), authController.adminResetPassword);
 router.post('/admins/logout', authController.adminLogout);
 
 // ======================== COMMON ROUTES (All roles) ========================

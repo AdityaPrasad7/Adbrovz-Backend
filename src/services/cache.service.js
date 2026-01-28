@@ -14,6 +14,7 @@ const cleanupExpired = (key) => {
 
 const set = async (key, value, expirySeconds = null) => {
   const expiresAt = expirySeconds ? now() + expirySeconds * 1000 : null;
+  console.log(`[CACHE] Setting key: ${key}, value: ${value}, expiresAt: ${expiresAt}`);
   store.set(key, { value, expiresAt });
   return true;
 };
@@ -21,6 +22,7 @@ const set = async (key, value, expirySeconds = null) => {
 const get = async (key) => {
   cleanupExpired(key);
   const entry = store.get(key);
+  console.log(`[CACHE] Getting key: ${key}, found: ${!!entry}`);
   return entry ? entry.value : null;
 };
 

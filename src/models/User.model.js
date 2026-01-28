@@ -64,13 +64,6 @@ const userSchema = new mongoose.Schema(
     deletedAt: {
       type: Date,
     },
-    acceptedPolicies: {
-      type: Boolean,
-      default: false,
-    },
-    policiesAcceptedAt: {
-      type: Date,
-    },
   },
   {
     timestamps: true,
