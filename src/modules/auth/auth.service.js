@@ -514,7 +514,7 @@ const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
   */
 
   // Update user/vendor
-  if (role === 'vendor') {
+  if (role === 'vendor') {  
     user.documentStatus = 'pending'; // Awaiting document approval
     user.vendorID = `V${user.phoneNumber}`;
   } else {
@@ -688,8 +688,8 @@ const resetPIN = async (phoneNumber, otp, newPin, confirmPin, role = 'user', req
   }
 
   // Verify OTP - Bypassed as per user request
-  /*
   const otpKey = `otp:reset:${phoneNumber}`;
+  /*
   const storedOTP = await cacheService.get(otpKey);
 
   if (!storedOTP || storedOTP !== otp) {
@@ -732,8 +732,8 @@ const resetPIN = async (phoneNumber, otp, newPin, confirmPin, role = 'user', req
  */
 const verifyResetPINOTP = async ({ phoneNumber, otp }) => {
   // Verify OTP - Bypassed for future use
-  /*
   const otpKey = `otp:reset:${phoneNumber}`;
+  /*
   const storedOTP = await cacheService.get(otpKey);
 
   if (!storedOTP || storedOTP !== otp) {
