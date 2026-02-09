@@ -52,7 +52,13 @@ const seedAdmins = async () => {
                 });
                 console.log(`✅ Created admin: ${adminData.username}`);
             } else {
-                console.log(`ℹ️ Admin already exists: ${adminData.username}`);
+                const hashedPassword = await hashPassword(adminData.password);
+                existingAdmin.password = hashedPassword;
+                existingAdmin.name = adminData.name;
+                existingAdmin.email = adminData.email;
+                existingAdmin.role = adminData.role;
+                await existingAdmin.save();
+                console.log(`♻️ Updated admin password: ${adminData.username}`);
             }
         }
     } catch (error) {

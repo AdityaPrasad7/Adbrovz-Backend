@@ -28,10 +28,20 @@ app.use(mongoSanitize());
 /**
  * CORS
  */
+const allowedOrigins = config.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
 app.use(
   cors({
-    origin: config.CORS_ORIGIN?.split(',') || '*',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Authorization'],
   })
 );
 
@@ -80,7 +90,11 @@ app.get('/favicon.ico', (req, res) => {
  * Rate limiting
  */
 app.use('/api', (req, res, next) => {
-  console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
+  const hasAuth = !!req.headers.authorization;
+  console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.originalUrl} - IP: ${req.ip} - Auth: ${hasAuth ? 'PRESENT' : 'MISSING'}`);
+  if (hasAuth) {
+    console.log(`🔑 Auth Header: ${req.headers.authorization.substring(0, 15)}...`);
+  }
   next();
 });
 

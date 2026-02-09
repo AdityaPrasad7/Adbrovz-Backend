@@ -16,6 +16,7 @@ const auditLogSchema = new mongoose.Schema(
         'account_deleted',
         'profile_updated',
         'duty_toggled',
+        'user_status_updated',
       ],
     },
     user: {

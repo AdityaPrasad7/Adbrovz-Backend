@@ -9,6 +9,8 @@ router.use(authenticate);
 router.use(authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN));
 
 router.get('/dashboard', adminController.getDashboard);
+router.get('/users', adminController.getUsers);
+router.patch('/users/:userId/status', adminController.updateUserStatus);
 
 // Audit log routes
 router.get('/audit-logs/user/:userId', adminController.getUserAuditLogs);
