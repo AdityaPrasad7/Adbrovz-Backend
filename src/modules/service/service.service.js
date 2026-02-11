@@ -181,6 +181,75 @@ const deleteService = async (serviceId) => {
     return service;
 };
 
+/**
+ * Admin: Get all categories with nested subcategories
+ * Optimized using aggregation pipeline for better performance
+ */
+const getAllCategoriesWithSubcategories = async () => {
+    // Use aggregation pipeline for efficient join
+    const result = await Category.aggregate([
+        { $match: { isActive: true } },
+        { $sort: { order: 1, name: 1 } },
+        {
+            $lookup: {
+                from: 'subcategories',
+                let: { categoryId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$category', '$$categoryId'] },
+                                    { $eq: ['$isActive', true] }
+                                ]
+                            }
+                        }
+                    },
+                    { $sort: { order: 1, name: 1 } },
+                    {
+                        $project: {
+                            _id: 1,
+                            name: 1,
+                            description: 1,
+                            price: { $ifNull: ['$price', 0] }
+                        }
+                    }
+                ],
+                as: 'subcategories'
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                name: 1,
+                description: 1,
+                icon: 1,
+                membershipFee: 1,
+                defaultFreeCredits: 1,
+                subcategories: {
+                    $map: {
+                        input: '$subcategories',
+                        as: 'sub',
+                        in: {
+                            id: { $toString: '$$sub._id' },
+                            _id: '$$sub._id',
+                            name: '$$sub.name',
+                            description: '$$sub.description',
+                            price: '$$sub.price'
+                        }
+                    }
+                }
+            }
+        }
+    ]);
+
+    // Convert _id to id for consistency
+    return result.map(cat => ({
+        ...cat,
+        id: cat._id.toString()
+    }));
+};
+
 module.exports = {
     getAllCategories,
     getSubcategoriesByCategoryId,
@@ -195,5 +264,6 @@ module.exports = {
     deleteSubcategory,
     createService,
     updateService,
-    deleteService
+    deleteService,
+    getAllCategoriesWithSubcategories
 };

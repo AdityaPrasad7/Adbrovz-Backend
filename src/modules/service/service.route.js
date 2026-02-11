@@ -15,19 +15,22 @@ router.get('/:serviceId', serviceController.getServiceDetails);
 router.use(authenticate);
 router.use(authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN));
 
+// Get all categories with subcategories (Admin)
+router.get('/admin/categories', serviceController.getCategoriesWithSubcategories);
+
 // Category Management
-router.post('/categories', upload.single('icon'), serviceController.createCategory);
-router.put('/categories/:categoryId', upload.single('icon'), serviceController.updateCategory);
-router.delete('/categories/:categoryId', serviceController.deleteCategory);
+router.post('/admin/categories', serviceController.createCategory);
+router.put('/admin/categories/:categoryId', serviceController.updateCategory);
+router.delete('/admin/categories/:categoryId', serviceController.deleteCategory);
 
 // Subcategory Management
-router.post('/subcategories', upload.single('icon'), serviceController.createSubcategory);
-router.put('/subcategories/:subcategoryId', upload.single('icon'), serviceController.updateSubcategory);
-router.delete('/subcategories/:subcategoryId', serviceController.deleteSubcategory);
+router.post('/admin/subcategories', serviceController.createSubcategory);
+router.put('/admin/subcategories/:subcategoryId', serviceController.updateSubcategory);
+router.delete('/admin/subcategories/:subcategoryId', serviceController.deleteSubcategory);
 
 // Service Management
-router.post('/services', upload.single('photo'), serviceController.createService);
-router.put('/services/:serviceId', upload.single('photo'), serviceController.updateService);
-router.delete('/services/:serviceId', serviceController.deleteService);
+router.post('/admin/services', serviceController.createService);
+router.put('/admin/services/:serviceId', serviceController.updateService);
+router.delete('/admin/services/:serviceId', serviceController.deleteService);
 
 module.exports = router;

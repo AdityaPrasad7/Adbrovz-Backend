@@ -122,6 +122,14 @@ const deleteService = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, null, 'Service deleted successfully'));
 });
 
+// Admin: Get all categories with subcategories
+const getCategoriesWithSubcategories = asyncHandler(async (req, res) => {
+    const categories = await serviceService.getAllCategoriesWithSubcategories();
+    res.status(200).json(
+        new ApiResponse(200, categories, 'Categories with subcategories retrieved successfully')
+    );
+});
+
 module.exports = {
     getCategories,
     getSubcategories,
@@ -136,5 +144,6 @@ module.exports = {
     deleteSubcategory,
     createService,
     updateService,
-    deleteService
+    deleteService,
+    getCategoriesWithSubcategories
 };
