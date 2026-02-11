@@ -7,7 +7,7 @@ const config = {
   API_VERSION: process.env.API_VERSION || 'v1',
 
   // Database
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/adbrovz',
+MONGODB_URI: process.env.MONGODB_URI || "mongodb+srv://adityaprasadtripathy20_db_user:0SJ3JqKGzOYtTDsK@cluster0.fhbj9mn.mongodb.net/",
   MONGODB_URI_TEST: process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/adbrovz_test',
 
   // JWT
