@@ -49,13 +49,35 @@ const getDashboardData = async () => {
 };
 
 /**
- * ADMIN: Get all service sections
+ * ADMIN/PUBLIC: Get all service sections
+ * Query params: isActive (boolean), ignoreEmpty (boolean)
  */
-const getAllServiceSections = async () => {
-    const sections = await ServiceSection.find()
+const getAllServiceSections = async (query = {}) => {
+    const filter = {};
+    if (query.isActive) {
+        filter.isActive = query.isActive === 'true';
+    }
+
+    let sections = await ServiceSection.find(filter)
         .sort({ order: 1 })
         .populate('category', 'name')
         .populate('subcategory', 'name');
+
+    // If ignoreEmpty is true, filter out sections with no services
+    if (query.ignoreEmpty === 'true') {
+        const sectionsWithServices = await Promise.all(
+            sections.map(async (section) => {
+                const count = await Service.countDocuments({
+                    category: section.category._id,
+                    subcategory: section.subcategory._id,
+                    isActive: true
+                });
+                return count > 0 ? section : null;
+            })
+        );
+        sections = sectionsWithServices.filter(Boolean);
+    }
+
     return sections;
 };
 

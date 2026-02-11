@@ -12,7 +12,7 @@ const getDashboardData = asyncHandler(async (req, res) => {
 
 // ADMIN: Service Sections
 const getAllServiceSections = asyncHandler(async (req, res) => {
-    const sections = await dashboardService.getAllServiceSections();
+    const sections = await dashboardService.getAllServiceSections(req.query);
     res.status(200).json(new ApiResponse(200, sections, 'Service sections retrieved successfully'));
 });
 
