@@ -44,6 +44,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ['PENDING', 'ACTIVE', 'SUSPENDED'],
+      default: 'ACTIVE',
+    },
     isLocked: {
       type: Boolean,
       default: false,

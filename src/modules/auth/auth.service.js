@@ -223,6 +223,10 @@ const initiateUserLogin = async ({ phoneNumber, acceptedPolicies }) => {
     throw new ApiError(403, MESSAGES.AUTH.ACCOUNT_NOT_VERIFIED);
   }
 
+  if (user.status && user.status !== 'ACTIVE') {
+    throw new ApiError(403, `Account is ${user.status.toLowerCase()}. Please contact support.`);
+  }
+
   // Check if account is locked
   if (user.isLocked && user.lockUntil > Date.now()) {
     throw new ApiError(403, MESSAGES.AUTH.ACCOUNT_LOCKED);
@@ -394,7 +398,7 @@ const adminLogin = async ({ username, password }, req = null) => {
   const isPasswordValid = await comparePassword(password, admin.password);
 
   if (!isPasswordValid) {
-    throw new ApiError(401, MESSAGES.AUTH.INVALID_CREDENTIALS);
+    throw new ApiError(401, 'Invalid username or password');
   }
 
   // Generate tokens
@@ -514,7 +518,7 @@ const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
   */
 
   // Update user/vendor
-  if (role === 'vendor') {  
+  if (role === 'vendor') {
     user.documentStatus = 'pending'; // Awaiting document approval
     user.vendorID = `V${user.phoneNumber}`;
   } else {
@@ -592,6 +596,10 @@ const login = async (phoneNumber, pin, role = 'user', req = null) => {
     if (!user.isVerified) {
       throw new ApiError(403, MESSAGES.AUTH.ACCOUNT_NOT_VERIFIED);
     }
+  }
+
+  if (user.status && user.status !== 'ACTIVE') {
+    throw new ApiError(403, `Account is ${user.status.toLowerCase()}. Please contact support.`);
   }
 
   if (user.isLocked && user.lockUntil > Date.now()) {

@@ -44,8 +44,36 @@ const getDashboard = asyncHandler(async (req, res) => {
   );
 });
 
+// Get all users
+const getUsers = asyncHandler(async (req, res) => {
+  const adminService = require('./admin.service');
+  const { limit = 10, skip = 0, search = '' } = req.query;
+
+  const result = await adminService.getAllUsers({ limit, skip, search });
+
+  res.status(200).json(
+    new ApiResponse(200, result, 'Users retrieved successfully')
+  );
+});
+
+// Update user status
+const updateUserStatus = asyncHandler(async (req, res) => {
+  const adminService = require('./admin.service');
+  const { userId } = req.params;
+  const { status } = req.body;
+  const adminId = req.user.id;
+
+  const user = await adminService.updateUserStatus(userId, status, adminId);
+
+  res.status(200).json(
+    new ApiResponse(200, user, 'User status updated successfully')
+  );
+});
+
 module.exports = {
   getDashboard,
+  getUsers,
+  updateUserStatus,
   getUserAuditLogs,
   getAuditLogsByAction,
 };

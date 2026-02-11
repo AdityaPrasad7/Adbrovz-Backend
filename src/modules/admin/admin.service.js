@@ -39,6 +39,70 @@ const getDashboardStats = async () => {
   }
 };
 
+const getAllUsers = async (query = {}) => {
+  const { limit = 10, skip = 0, search = '' } = query;
+
+  const filter = {
+    deletedAt: null,
+  };
+
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { phoneNumber: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip)),
+    User.countDocuments(filter),
+  ]);
+
+  return {
+    users,
+    total,
+    limit: parseInt(limit),
+    skip: parseInt(skip),
+  };
+};
+
+const updateUserStatus = async (userId, status, adminId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const oldStatus = user.status || (user.isActive ? 'ACTIVE' : 'SUSPENDED');
+  user.status = status;
+  user.isActive = (status === 'ACTIVE');
+  await user.save();
+
+  // Log the action
+  try {
+    await AuditLog.create({
+      user: adminId,
+      userModel: 'Admin',
+      action: 'user_status_updated',
+      details: {
+        targetUser: userId,
+        oldStatus,
+        newStatus: status
+      }
+    });
+  } catch (logError) {
+    console.error('Audit logging failed:', logError.message);
+    // Don't fail the primary action (status update) if logging fails
+  }
+
+  return user;
+};
+
 module.exports = {
   getDashboardStats,
+  getAllUsers,
+  updateUserStatus,
 };
