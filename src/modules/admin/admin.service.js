@@ -40,11 +40,16 @@ const getDashboardStats = async () => {
 };
 
 const getAllUsers = async (query = {}) => {
-  const { limit = 10, skip = 0, search = '' } = query;
+  const { limit = 10, skip = 0, search = '', includeDeleted = false } = query;
 
-  const filter = {
-    deletedAt: null,
-  };
+  // Build filter - include deleted users if requested (for exports)
+  const filter = {};
+  
+  // Only filter out deleted users if includeDeleted is not true
+  // This allows exports to show all users including deleted ones
+  if (includeDeleted !== 'true' && includeDeleted !== true) {
+    filter.deletedAt = null;
+  }
 
   if (search) {
     filter.$or = [
