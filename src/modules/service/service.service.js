@@ -23,7 +23,7 @@ const getSubcategoriesByCategoryId = async (categoryId) => {
         isActive: true
     })
         .sort({ order: 1, name: 1 })
-        .select('name description icon');
+        .select('name description icon order price');
 
     return subcategories;
 };
@@ -211,6 +211,8 @@ const getAllCategoriesWithSubcategories = async () => {
                             _id: 1,
                             name: 1,
                             description: 1,
+                            icon: 1,
+                            order: 1,
                             price: { $ifNull: ['$price', 0] }
                         }
                     }
@@ -235,6 +237,8 @@ const getAllCategoriesWithSubcategories = async () => {
                             _id: '$$sub._id',
                             name: '$$sub.name',
                             description: '$$sub.description',
+                            icon: '$$sub.icon',
+                            order: '$$sub.order',
                             price: '$$sub.price'
                         }
                     }

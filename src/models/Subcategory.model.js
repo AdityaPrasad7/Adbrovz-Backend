@@ -12,6 +12,9 @@ const subcategorySchema = new mongoose.Schema(
       ref: 'Category',
       required: true,
     },
+    icon: {
+      type: String,
+    },
     description: {
       type: String,
       trim: true,
