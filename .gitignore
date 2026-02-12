@@ -96,7 +96,7 @@ dist
 .DS_Store
 
 # Uploads
-uploads/
+uploads/*
 !uploads/services/
 temp/
 
