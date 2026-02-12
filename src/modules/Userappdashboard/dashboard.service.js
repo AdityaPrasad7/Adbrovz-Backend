@@ -11,7 +11,8 @@ const getDashboardData = async () => {
     const banners = await Banner.find({ isActive: true })
         .sort({ order: 1 })
         .populate('category', '_id name')
-        .select('title image category order');
+        .select('title image category order')
+        .then(docs => docs.filter(doc => doc.category)); // Filter out orphaned banners
 
     // Get active service sections
     const serviceSections = await ServiceSection.find({ isActive: true })
@@ -22,6 +23,11 @@ const getDashboardData = async () => {
     // For each service section, get the services
     const sectionsWithServices = await Promise.all(
         serviceSections.map(async (section) => {
+            // Check if category or subcategory is missing
+            if (!section.category || !section.subcategory) {
+                return null;
+            }
+
             const services = await Service.find({
                 category: section.category._id,
                 subcategory: section.subcategory._id,
@@ -44,7 +50,7 @@ const getDashboardData = async () => {
 
     return {
         banners,
-        serviceSections: sectionsWithServices
+        serviceSections: sectionsWithServices.filter(Boolean)
     };
 };
 
@@ -65,6 +71,16 @@ const getAllServiceSections = async (query = {}) => {
 
     const sectionsWithServices = await Promise.all(
         sections.map(async (section) => {
+            // Handle missing category or subcategory
+            if (!section.category || !section.subcategory) {
+                return {
+                    ...section.toObject(),
+                    services: [],
+                    totalServices: 0,
+                    isOrphaned: true
+                };
+            }
+
             // Find services for this section
             const services = await Service.find({
                 category: section.category._id,
@@ -84,8 +100,8 @@ const getAllServiceSections = async (query = {}) => {
 
             // Get total count of active services for this subcategory
             const count = await Service.countDocuments({
-                category: section.category?._id,
-                subcategory: section.subcategory?._id,
+                category: section.category._id,
+                subcategory: section.subcategory._id,
                 isActive: true
             });
 

@@ -12,8 +12,13 @@ const getDashboardData = asyncHandler(async (req, res) => {
 
 // ADMIN: Service Sections
 const getAllServiceSections = asyncHandler(async (req, res) => {
-    const sections = await dashboardService.getAllServiceSections(req.query);
-    res.status(200).json(new ApiResponse(200, sections, 'Service sections retrieved successfully'));
+    try {
+        const sections = await dashboardService.getAllServiceSections(req.query);
+        res.status(200).json(new ApiResponse(200, sections, 'Service sections retrieved successfully'));
+    } catch (error) {
+        console.error('DEBUG: getAllServiceSections error:', error);
+        throw error;
+    }
 });
 
 const createServiceSection = asyncHandler(async (req, res) => {

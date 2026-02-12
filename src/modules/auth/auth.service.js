@@ -152,6 +152,8 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
     user.pin = hashedPIN;
     user.acceptedPolicies = acceptedPolicies;
     user.policiesAcceptedAt = new Date();
+    user.isVerified = true; // Auto-verify
+    user.userID = `U${phoneNumber}`; // Set UserID
     await user.save();
   } else {
     // Create new user
@@ -160,24 +162,14 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
       name,
       email,
       pin: hashedPIN,
-      isVerified: false,
-      userID: `U${phoneNumber}`,
+      isVerified: true, // Auto-verify
+      userID: `U${phoneNumber}`, // Set UserID
       acceptedPolicies,
       policiesAcceptedAt: new Date(),
     });
   }
 
-  // Generate and Send OTP
-  const otp = generateOTP(config.OTP_LENGTH);
-  const otpKey = `otp:signup:user:${phoneNumber}`;
-  const otpExpiry = config.OTP_EXPIRE_MINUTES * 60;
-
-  // Store ONLY OTP in cache for verification
-  console.log(`[DEBUG] Setting Signup OTP for User (Complete): ${phoneNumber}, Key: ${otpKey}, OTP: ${otp}`);
-  await cacheService.set(otpKey, otp, otpExpiry);
-
-  // Send OTP via SMS
-  // await smsService.sendOTP(phoneNumber, otp);
+  // OTP Generation and Sending REMOVED
 
   // Delete signup session
   await cacheService.del(signupKey);
@@ -191,7 +183,7 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
       userModel: 'User',
       details: {
         signupStep: 'PIN_SUBMITTED',
-        otpSent: true,
+        verificationMethod: 'AUTO_VERIFIED',
       },
       ip,
       userAgent,
@@ -199,8 +191,8 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
   }
 
   return {
-    phoneNumber: user.phoneNumber, // Return phone number for Step 3
-    message: 'OTP sent to your phone number. Please verify to complete registration.',
+    phoneNumber: user.phoneNumber,
+    message: 'Signup completed successfully. You can now login.',
   };
 };
 
@@ -219,9 +211,10 @@ const initiateUserLogin = async ({ phoneNumber, acceptedPolicies }) => {
     throw new ApiError(401, MESSAGES.AUTH.INVALID_CREDENTIALS);
   }
 
-  if (!user.isVerified) {
-    throw new ApiError(403, MESSAGES.AUTH.ACCOUNT_NOT_VERIFIED);
-  }
+  // Verification check removed as per requirement
+  // if (!user.isVerified) {
+  //   throw new ApiError(403, MESSAGES.AUTH.ACCOUNT_NOT_VERIFIED);
+  // }
 
   if (user.status && user.status !== 'ACTIVE') {
     throw new ApiError(403, `Account is ${user.status.toLowerCase()}. Please contact support.`);
