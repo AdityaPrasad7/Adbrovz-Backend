@@ -134,32 +134,49 @@ const deleteSubcategory = async (subcategoryId) => {
  * Admin: Create Service
  */
 const createService = async (data) => {
-    console.log('DEBUG: createService data received:', JSON.stringify(data));
+    console.log('DEBUG: createService received body (raw):', data);
 
-    // Trim IDs if they are strings
-    if (typeof data.category === 'string') data.category = data.category.trim();
-    if (typeof data.subcategory === 'string') data.subcategory = data.subcategory.trim();
+    // Ensure IDs are valid strings and not "null"/"undefined"
+    const validateId = (id, name) => {
+        if (!id) return null;
+        const strId = String(id).trim();
+        if (strId === 'null' || strId === 'undefined' || strId === '') {
+            console.error(`DEBUG: Invalid ${name} ID received:`, id);
+            return null;
+        }
+        return strId;
+    };
+
+    data.category = validateId(data.category, 'category');
+    data.subcategory = validateId(data.subcategory, 'subcategory');
+
+    if (!data.category) {
+        throw new ApiError(400, 'A valid category ID is required');
+    }
 
     // Verify category exists
     console.log('DEBUG: Finding category by ID:', data.category);
     const category = await Category.findById(data.category);
-    console.log('DEBUG: Category found:', !!category);
 
     if (!category) {
-        console.log('DEBUG: Category not found. Listing all available categories for comparison...');
-        const allCats = await Category.find({}, '_id name');
-        console.log('DEBUG: Available Category IDs:', allCats.map(c => c._id.toString()));
-        throw new ApiError(404, 'Category not found');
+        console.error('DEBUG: Category not found in DB:', data.category);
+        // List a few categories for comparison
+        const sampleCats = await Category.find().limit(5).select('_id name');
+        console.log('DEBUG: Sample Categories in DB:', sampleCats.map(c => ({ id: c._id, name: c.name })));
+        throw new ApiError(404, `Category not found with ID: ${data.category}`);
     }
 
     if (data.subcategory) {
         console.log('DEBUG: Finding subcategory by ID:', data.subcategory);
         const subcategory = await Subcategory.findById(data.subcategory);
-        console.log('DEBUG: Subcategory found:', !!subcategory);
-        if (!subcategory) throw new ApiError(404, 'Subcategory not found');
+        if (!subcategory) {
+            console.error('DEBUG: Subcategory not found in DB:', data.subcategory);
+            throw new ApiError(404, `Subcategory not found with ID: ${data.subcategory}`);
+        }
     }
 
     const service = await Service.create(data);
+    console.log('DEBUG: Service created successfully:', service._id);
     return service;
 };
 
@@ -186,7 +203,7 @@ const deleteService = async (serviceId) => {
  * Optimized using aggregation pipeline for better performance
  */
 const getAllCategoriesWithSubcategories = async () => {
-    // Use aggregation pipeline for efficient join
+    // Use aggregation pipeline to join Categories -> Subcategories -> Services
     const result = await Category.aggregate([
         { $match: { isActive: true } },
         { $sort: { order: 1, name: 1 } },
@@ -207,13 +224,46 @@ const getAllCategoriesWithSubcategories = async () => {
                     },
                     { $sort: { order: 1, name: 1 } },
                     {
+                        $lookup: {
+                            from: 'services',
+                            let: { subcatId: '$_id' },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ['$subcategory', '$$subcatId'] },
+                                                { $eq: ['$isActive', true] }
+                                            ]
+                                        }
+                                    }
+                                },
+                                { $sort: { title: 1 } },
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        title: 1,
+                                        photo: 1,
+                                        adminPrice: 1,
+                                        price: 1,
+                                        approxCompletionTime: 1,
+                                        isActive: 1,
+                                        description: 1
+                                    }
+                                }
+                            ],
+                            as: 'services'
+                        }
+                    },
+                    {
                         $project: {
                             _id: 1,
                             name: 1,
                             description: 1,
                             icon: 1,
                             order: 1,
-                            price: { $ifNull: ['$price', 0] }
+                            price: { $ifNull: ['$price', 0] },
+                            services: 1
                         }
                     }
                 ],
@@ -239,7 +289,8 @@ const getAllCategoriesWithSubcategories = async () => {
                             description: '$$sub.description',
                             icon: '$$sub.icon',
                             order: '$$sub.order',
-                            price: '$$sub.price'
+                            price: '$$sub.price',
+                            services: '$$sub.services'
                         }
                     }
                 }

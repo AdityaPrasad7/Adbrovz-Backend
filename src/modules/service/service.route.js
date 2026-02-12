@@ -29,8 +29,8 @@ router.put('/admin/subcategories/:subcategoryId', upload.single('icon'), service
 router.delete('/admin/subcategories/:subcategoryId', serviceController.deleteSubcategory);
 
 // Service Management
-router.post('/admin/services', serviceController.createService);
-router.put('/admin/services/:serviceId', serviceController.updateService);
+router.post('/admin/services', upload.single('photo'), serviceController.createService);
+router.put('/admin/services/:serviceId', upload.single('photo'), serviceController.updateService);
 router.delete('/admin/services/:serviceId', serviceController.deleteService);
 
 module.exports = router;
