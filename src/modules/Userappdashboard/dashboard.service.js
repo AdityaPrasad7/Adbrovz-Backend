@@ -66,8 +66,8 @@ const getAllServiceSections = async (query = {}) => {
 
     const sections = await ServiceSection.find(filter)
         .sort({ order: 1 })
-        .populate('category', 'name')
-        .populate('subcategory', 'name');
+        .populate('category', 'name icon')
+        .populate('subcategory', 'name icon');
 
     const sectionsWithServices = await Promise.all(
         sections.map(async (section) => {
@@ -89,9 +89,9 @@ const getAllServiceSections = async (query = {}) => {
             })
                 .limit(section.limit) // limit to section's limit
                 .sort({ order: 1 }) // implied service order, or createdAt
-                .select('title description photo approxCompletionTime adminPrice isAdminPriced category subcategory')
-                .populate('category', '_id name')
-                .populate('subcategory', '_id name');
+                // .select('title description photo approxCompletionTime adminPrice isAdminPriced category subcategory') // Removed to return everything
+                .populate('category', '_id name icon')
+                .populate('subcategory', '_id name icon');
 
             // If ignoreEmpty is true and no services, filter this section out
             if (query.ignoreEmpty === 'true' && services.length === 0) {
