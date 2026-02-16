@@ -26,9 +26,8 @@ const getAllDisputes = asyncHandler(async (req, res) => {
 const updateDisputeStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, adminComments, resolutionNotes } = req.body;
-    const parsedResolutionNotes = typeof resolutionNotes === 'string' ? JSON.parse(resolutionNotes) : resolutionNotes;
 
-    const dispute = await disputeService.updateDisputeStatus(id, { status, adminComments, resolutionNotes: parsedResolutionNotes });
+    const dispute = await disputeService.updateDisputeStatus(id, { status, adminComments, resolutionNotes });
     res.status(200).json(new ApiResponse(200, dispute, 'Dispute status updated successfully'));
 });
 

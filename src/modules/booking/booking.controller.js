@@ -116,6 +116,19 @@ const getMyBookings = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get completed booking history for user
+ */
+const getCompletedHistory = asyncHandler(async (req, res) => {
+    const userId = req.user?.userId;
+
+    const bookings = await bookingService.getCompletedBookingsByUser(userId);
+
+    res.status(200).json(
+        new ApiResponse(200, bookings, 'Completed booking history retrieved successfully')
+    );
+});
+
+/**
  * Retry vendor search
  */
 const retrySearch = asyncHandler(async (req, res) => {
@@ -139,5 +152,6 @@ module.exports = {
     cancelBooking,
     rescheduleBooking,
     getMyBookings,
+    getCompletedHistory,
     retrySearch
 };

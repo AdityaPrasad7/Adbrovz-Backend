@@ -18,6 +18,7 @@ router.post('/accept/:bookingId', authenticate, bookingController.acceptLead);
  */
 router.post('/', authenticate, bookingController.createBooking);
 router.get('/my-bookings', authenticate, bookingController.getMyBookings);
+router.get('/completed-history', authenticate, bookingController.getCompletedHistory);
 router.post('/:id/cancel', authenticate, bookingController.cancelBooking);
 router.post('/:id/reschedule', authenticate, bookingController.rescheduleBooking);
 router.post('/:id/retry-search', authenticate, bookingController.retrySearch);

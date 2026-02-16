@@ -280,6 +280,19 @@ const getBookingsByVendor = async (vendorId) =>
         .populate('user', 'name phoneNumber')
         .sort({ createdAt: -1 });
 
+/**
+ * Get completed bookings for a user
+ */
+const getCompletedBookingsByUser = async (userId) => {
+    return Booking.find({
+        user: userId,
+        status: 'completed'
+    })
+        .populate('services.service', 'title adminPrice photo')
+        .populate('vendor', 'name phoneNumber photo')
+        .sort({ createdAt: -1 });
+};
+
 const retrySearchVendors = async (userId, bookingId) => {
     const booking = await findBookingByUser(bookingId, userId);
     if (!booking) throw new ApiError(404, 'Booking not found');
@@ -305,5 +318,6 @@ module.exports = {
     rescheduleBooking,
     getBookingsByUser,
     getBookingsByVendor,
+    getCompletedBookingsByUser,
     retrySearchVendors
 };
