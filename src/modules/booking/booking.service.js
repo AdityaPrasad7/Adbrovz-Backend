@@ -157,30 +157,7 @@ const createBooking = async (userId, bookingData) => {
     }
 
     const existingBookingsCount = await Booking.countDocuments({ user: userId });
-    if (existingBookingsCount === 0) {
-        if (!otp) {
-            throw new ApiError(400, 'OTP verification required');
-        }
-
-        const userDoc = await User.findById(userId);
-        if (!userDoc) throw new ApiError(404, 'User not found');
-
-        if (otp !== '1234') {
-            const otpKey = `otp:booking:${userDoc.phoneNumber}`;
-            const storedOTP = await cacheService.get(otpKey);
-
-            if (!storedOTP || storedOTP !== otp) {
-                throw new ApiError(400, 'Invalid OTP');
-            }
-
-            await cacheService.del(otpKey);
-        }
-
-        if (!userDoc.isVerified) {
-            userDoc.isVerified = true;
-            await userDoc.save();
-        }
-    }
+    // OTP check removed as users are now auto-verified
 
     const processedServices = [];
     for (const item of services) {
@@ -341,6 +318,7 @@ module.exports = {
     searchVendors,
     cancelBooking,
     rescheduleBooking,
+    findBookingByUser,
     getBookingsByUser,
     getBookingsByVendor,
     getCompletedBookingsByUser,

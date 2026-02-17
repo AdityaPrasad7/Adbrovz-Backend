@@ -37,7 +37,15 @@ const DEFAULT_SETTINGS = {
     },
     'pricing.travel_charge': {
         value: 50,
-        description: 'Common travel fee applied when a vendor marks arrived.',
+        description: 'Base travel fee applied when a vendor marks arrived.',
+    },
+    'pricing.travel_charge_per_km': {
+        value: 10,
+        description: 'Additional charge per kilometer beyond free tier.',
+    },
+    'pricing.travel_charge_free_tier_km': {
+        value: 5,
+        description: 'Distance in KM up to which no travel charge is applied.',
     },
     'app.min_version': {
         value: '1.0.0',

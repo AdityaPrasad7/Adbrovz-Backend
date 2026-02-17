@@ -30,50 +30,34 @@ const userSignup = async ({ phoneNumber, name, email, pin, confirmPin, acceptedP
   // Hash PIN
   const hashedPIN = await hashPIN(pin);
 
-  // Generate OTP
-  const otp = generateOTP(config.OTP_LENGTH);
-  const otpKey = `otp:signup:user:${phoneNumber}`;
-  const otpExpiry = config.OTP_EXPIRE_MINUTES * 60;
-
-  // Store OTP in cache
-  console.log(`[DEBUG] Setting Signup OTP for User: ${phoneNumber}, Key: ${otpKey}, OTP: ${otp}`);
-  await cacheService.set(otpKey, otp, otpExpiry);
-
-  // Send OTP via SMS
-  // await smsService.sendOTP(phoneNumber, otp);
-
-  // If user exists but not verified, update their info and resend OTP
-  if (existingUser && !existingUser.isVerified) {
-    existingUser.name = name;
-    existingUser.email = email;
-    existingUser.pin = hashedPIN;
-    existingUser.acceptedPolicies = acceptedPolicies;
-    existingUser.policiesAcceptedAt = new Date();
-    await existingUser.save();
-
-    return {
-      userId: existingUser._id,
-      phoneNumber: existingUser.phoneNumber,
-      message: 'OTP resent to your phone number',
-    };
-  }
-
-  // Create new user (pending verification)
+  // Create new user (verified)
   const user = await User.create({
     phoneNumber,
     name,
     email,
     pin: hashedPIN,
-    isVerified: false,
+    isVerified: true,
     userID: `U${Date.now()}`, // Temporary, will be updated after verification
     acceptedPolicies,
     policiesAcceptedAt: new Date(),
   });
 
+  // Generate tokens for auto-login
+  const token = generateToken({ userId: user._id, role: user.role });
+  const refreshToken = generateRefreshToken({ userId: user._id });
+
   return {
-    userId: user._id,
-    phoneNumber: user.phoneNumber,
-    message: 'OTP sent to your phone number',
+    user: {
+      id: user._id,
+      userID: user.userID,
+      phoneNumber: user.phoneNumber,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    token,
+    refreshToken,
+    message: 'Signup successful',
   };
 };
 
@@ -152,7 +136,7 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
     user.pin = hashedPIN;
     user.acceptedPolicies = acceptedPolicies;
     user.policiesAcceptedAt = new Date();
-    user.isVerified = false; // Pending verification
+    user.isVerified = true; // Auto-verified
     user.userID = `U${phoneNumber}`; // Set UserID
     await user.save();
   } else {
@@ -162,7 +146,8 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
       name,
       email,
       pin: hashedPIN,
-      isVerified: false, // Pending verification
+      pin: hashedPIN,
+      isVerified: true, // Auto-verified
       userID: `U${phoneNumber}`, // Set UserID
       acceptedPolicies,
       policiesAcceptedAt: new Date(),
@@ -190,9 +175,22 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
     });
   }
 
+  // Generate tokens for auto-login
+  const token = generateToken({ userId: user._id, role: user.role });
+  const refreshToken = generateRefreshToken({ userId: user._id });
+
   return {
-    phoneNumber: user.phoneNumber,
-    message: 'Signup completed successfully. You can now login.',
+    user: {
+      id: user._id,
+      userID: user.userID,
+      phoneNumber: user.phoneNumber,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    token,
+    refreshToken,
+    message: 'Signup completed successfully.',
   };
 };
 
