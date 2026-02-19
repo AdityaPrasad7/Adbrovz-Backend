@@ -3,6 +3,7 @@ const router = express.Router();
 const vendorController = require('./vendor.controller');
 const { authenticate, authorize } = require('../../middlewares/auth.middleware');
 const { ROLES } = require('../../constants/roles');
+const { upload, uploadToCloudinary } = require('../../middlewares/cloudinary.middleware');
 
 // Registration utility routes (Can be called during registration flow)
 router.post('/register/:vendorId/select-services', vendorController.selectServices);
@@ -12,6 +13,13 @@ router.post('/register/:vendorId/purchase-plan', vendorController.purchaseCredit
 // Vendor status routes
 // Vendor status routes
 router.patch('/:vendorId/status', authenticate, authorize(ROLES.VENDOR, ROLES.ADMIN), vendorController.toggleOnlineStatus);
+
+// Profile routes
+router.get('/profile', authenticate, authorize(ROLES.VENDOR), vendorController.getProfile);
+router.put('/profile', authenticate, authorize(ROLES.VENDOR), upload.single('image'), uploadToCloudinary('vendors'), vendorController.updateProfile);
+
+// Admin can also get profile by ID
+router.get('/profile/:vendorId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), vendorController.getProfile);
 
 
 // Public/Common routes

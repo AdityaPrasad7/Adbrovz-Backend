@@ -29,6 +29,12 @@ const upload = multer({
  */
 const uploadToCloudinary = (folder) => {
     return async (req, res, next) => {
+        console.log('DEBUG: Cloudinary Middleware Start', {
+            hasFile: !!req.file,
+            fieldname: req.file?.fieldname,
+            folder
+        });
+
         if (!req.file) {
             return next();
         }
@@ -51,11 +57,14 @@ const uploadToCloudinary = (folder) => {
                 bytes: result.bytes
             };
 
+            console.log('DEBUG: Cloudinary Upload Success:', result.secure_url);
+
             // Store URL in req.body for easy access
             if (req.file.fieldname === 'icon') {
                 req.body.icon = result.secure_url;
-            } else if (req.file.fieldname === 'photo') {
+            } else if (req.file.fieldname === 'photo' || req.file.fieldname === 'image') {
                 req.body.photo = result.secure_url;
+                req.body.image = result.secure_url;
             }
 
             next();

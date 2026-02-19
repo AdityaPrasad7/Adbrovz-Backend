@@ -21,6 +21,15 @@ const updateProfileSchema = Joi.object({
   photo: Joi.string()
     .uri()
     .optional(),
+  image: Joi.string()
+    .uri()
+    .optional(),
+  address: Joi.string().trim().optional(),
+  city: Joi.string().trim().optional(),
+  state: Joi.string().trim().optional(),
+  zipcode: Joi.string().trim().optional(),
+  country: Joi.string().trim().optional(),
+  mobileNumber: Joi.string().trim().optional(),
 });
 
 module.exports = {

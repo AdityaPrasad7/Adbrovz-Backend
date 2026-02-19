@@ -23,7 +23,18 @@ const getProfile = asyncHandler(async (req, res) => {
 // Update user profile
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user.userId;
-  const updateData = req.body;
+  const updateData = { ...req.body };
+
+  console.log('DEBUG: Update Profile Request:', {
+    userId,
+    body: req.body,
+    file: req.file ? { fieldname: req.file.fieldname, originalname: req.file.originalname, cloudinary: req.file.cloudinary } : 'None'
+  });
+
+  if (req.file && req.file.cloudinary) {
+    updateData.image = req.file.cloudinary.url;
+    console.log('DEBUG: Set Image from Cloudinary:', updateData.image);
+  }
 
   const user = await userService.updateUser(userId, updateData, req);
 

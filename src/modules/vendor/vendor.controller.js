@@ -59,11 +59,42 @@ const toggleOnlineStatus = asyncHandler(async (req, res) => {
     );
 });
 
+/**
+ * Get logged-in vendor profile
+ */
+const getProfile = asyncHandler(async (req, res) => {
+    // If vendorId is provided in params (admin use case), use it. Otherwise use logged-in user.
+    const vendorId = req.params.vendorId || req.user.userId;
+    const profile = await vendorService.getVendorProfile(vendorId);
+    res.status(200).json(
+        new ApiResponse(200, profile, 'Vendor profile retrieved successfully')
+    );
+});
+
+/**
+ * Update logged-in vendor profile
+ */
+const updateProfile = asyncHandler(async (req, res) => {
+    const vendorId = req.user.userId;
+    const data = { ...req.body };
+
+    if (req.file && req.file.cloudinary) {
+        data.image = req.file.cloudinary.url;
+    }
+
+    const profile = await vendorService.updateVendorProfile(vendorId, data);
+    res.status(200).json(
+        new ApiResponse(200, profile, 'Vendor profile updated successfully')
+    );
+});
+
 module.exports = {
     getAllVendors,
     selectServices,
     purchaseMembership,
     purchaseCreditPlan,
     toggleOnlineStatus,
+    getProfile,
+    updateProfile,
 };
 

@@ -255,6 +255,54 @@ const toggleOnlineStatus = async (vendorId, isOnline) => {
     };
 };
 
+/**
+ * Get vendor profile by ID
+ */
+const getVendorProfile = async (vendorId) => {
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) throw new ApiError(404, 'Vendor not found');
+
+    return {
+        id: vendor._id,
+        image: vendor.documents?.photo?.url || '',
+        name: vendor.name,
+        mobileNumber: vendor.phoneNumber,
+        mail: vendor.email,
+        address: vendor.address || '',
+        city: vendor.workCity,
+        state: vendor.workState,
+        zipcode: vendor.zipcode || (vendor.workPincodes && vendor.workPincodes[0]) || '',
+        country: vendor.country || 'India',
+    };
+};
+
+/**
+ * Update vendor profile
+ */
+const updateVendorProfile = async (vendorId, profileData) => {
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) throw new ApiError(404, 'Vendor not found');
+
+    // Map input fields to model fields if necessary
+    if (profileData.name) vendor.name = profileData.name;
+    if (profileData.mobileNumber) vendor.phoneNumber = profileData.mobileNumber;
+    if (profileData.mail) vendor.email = profileData.mail;
+    if (profileData.address) vendor.address = profileData.address;
+    if (profileData.city) vendor.workCity = profileData.city;
+    if (profileData.state) vendor.workState = profileData.state;
+    if (profileData.zipcode) vendor.zipcode = profileData.zipcode;
+    if (profileData.country) vendor.country = profileData.country;
+
+    // Handle image separately via controller/middleware if it's a file
+    if (profileData.image) {
+        vendor.set('documents.photo.url', profileData.image);
+    }
+
+    await vendor.save();
+
+    return getVendorProfile(vendorId);
+};
+
 module.exports = {
     getAllVendors,
     selectServices,
@@ -266,5 +314,7 @@ module.exports = {
     toggleVendorSuspension,
     rejectVendorAccount,
     toggleOnlineStatus,
+    getVendorProfile,
+    updateVendorProfile,
 };
 

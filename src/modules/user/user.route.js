@@ -13,9 +13,9 @@ router.get('/profile', userController.getProfile);
 // Admin routes
 router.get('/', userController.getUsers);
 router.get('/:userId/coins', userController.getUserCoins);
-router.patch(
+router.put(
     '/profile',
-    upload.single('photo'),
+    upload.single('image'),
     uploadToCloudinary('users'),
     validateUpdateProfile,
     userController.updateProfile

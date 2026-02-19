@@ -7,7 +7,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const authenticate = asyncHandler(async (req, res, next) => {
   // Get token from header
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new ApiError(401, MESSAGES.AUTH.UNAUTHORIZED);
   }
@@ -19,6 +19,10 @@ const authenticate = asyncHandler(async (req, res, next) => {
 
   // Attach user info to request
   req.user = decoded;
+  console.log('DEBUG: Authenticated User:', {
+    role: req.user.role,
+    userId: req.user.userId || req.user.id || req.user._id
+  });
   next();
 });
 
@@ -29,6 +33,12 @@ const authorize = (...roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
+      console.log('DEBUG: Authorization Failed', {
+        userRole: req.user.role,
+        requiredRoles: roles,
+        userId: req.user.userId || req.user.id || req.user._id,
+        decodedToken: req.user
+      });
       throw new ApiError(403, MESSAGES.FORBIDDEN);
     }
 
@@ -38,7 +48,7 @@ const authorize = (...roles) => {
 
 const optionalAuth = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  
+
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const token = authHeader.substring(7);
@@ -48,7 +58,7 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
       // Ignore error for optional auth
     }
   }
-  
+
   next();
 });
 

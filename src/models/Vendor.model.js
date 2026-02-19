@@ -41,6 +41,19 @@ const vendorSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    address: {
+      type: String,
+      trim: true,
+    },
+    zipcode: {
+      type: String,
+      trim: true,
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: 'India',
+    },
     workPincodes: [{
       type: String,
     }],

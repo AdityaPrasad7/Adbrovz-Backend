@@ -111,9 +111,6 @@ const acceptLead = async (vendorId, bookingId) => {
     };
 };
 
-/**
- * Helper: find booking by Mongo ID or bookingID
- */
 const findBookingByUser = async (bookingId, userId) => {
     const query = { user: userId };
 
@@ -124,6 +121,30 @@ const findBookingByUser = async (bookingId, userId) => {
     }
 
     return Booking.findOne(query);
+};
+
+/**
+ * Get full booking details with population
+ */
+const getBookingDetails = async (bookingId, userId, role) => {
+    const query = role === 'vendor' ? { vendor: userId } : { user: userId };
+
+    if (mongoose.isValidObjectId(bookingId)) {
+        query.$or = [{ _id: bookingId }, { bookingID: bookingId }];
+    } else {
+        query.bookingID = bookingId;
+    }
+
+    const booking = await Booking.findOne(query)
+        .populate('services.service', 'title adminPrice photo')
+        .populate('vendor', 'name phoneNumber photo')
+        .populate('user', 'name phoneNumber photo');
+
+    if (!booking) {
+        throw new ApiError(404, 'Booking not found');
+    }
+
+    return booking;
 };
 
 /**
@@ -319,6 +340,7 @@ module.exports = {
     cancelBooking,
     rescheduleBooking,
     findBookingByUser,
+    getBookingDetails,
     getBookingsByUser,
     getBookingsByVendor,
     getCompletedBookingsByUser,

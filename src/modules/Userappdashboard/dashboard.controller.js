@@ -10,6 +10,14 @@ const getDashboardData = asyncHandler(async (req, res) => {
     );
 });
 
+// USER: Get vendor banners
+const getVendorBanners = asyncHandler(async (req, res) => {
+    const banners = await dashboardService.getVendorBanners();
+    res.status(200).json(
+        new ApiResponse(200, banners, 'Vendor banners retrieved successfully')
+    );
+});
+
 // ADMIN: Service Sections
 const getAllServiceSections = asyncHandler(async (req, res) => {
     try {
@@ -44,7 +52,9 @@ const getAllBanners = asyncHandler(async (req, res) => {
 
 const createBanner = asyncHandler(async (req, res) => {
     const data = { ...req.body };
-    if (req.file) {
+    if (req.file && req.file.cloudinary) {
+        data.image = req.file.cloudinary.url;
+    } else if (req.file) {
         data.image = req.file.path.replace(/\\/g, '/');
     }
     const banner = await dashboardService.createBanner(data);
@@ -53,7 +63,9 @@ const createBanner = asyncHandler(async (req, res) => {
 
 const updateBanner = asyncHandler(async (req, res) => {
     const data = { ...req.body };
-    if (req.file) {
+    if (req.file && req.file.cloudinary) {
+        data.image = req.file.cloudinary.url;
+    } else if (req.file) {
         data.image = req.file.path.replace(/\\/g, '/');
     }
     const banner = await dashboardService.updateBanner(req.params.id, data);
@@ -74,5 +86,6 @@ module.exports = {
     getAllBanners,
     createBanner,
     updateBanner,
-    deleteBanner
+    deleteBanner,
+    getVendorBanners
 };

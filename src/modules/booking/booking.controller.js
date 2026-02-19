@@ -120,13 +120,10 @@ const getMyBookings = asyncHandler(async (req, res) => {
  */
 const getBookingById = asyncHandler(async (req, res) => {
     const userId = req.user?.userId;
+    const role = req.user?.role;
     const { id } = req.params;
 
-    const booking = await bookingService.findBookingByUser(id, userId);
-
-    if (!booking) {
-        throw new ApiError(404, 'Booking not found');
-    }
+    const booking = await bookingService.getBookingDetails(id, userId, role);
 
     res.status(200).json(
         new ApiResponse(200, booking, 'Booking details retrieved successfully')

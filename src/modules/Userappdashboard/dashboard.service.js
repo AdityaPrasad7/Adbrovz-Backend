@@ -8,10 +8,10 @@ const ApiError = require('../../utils/ApiError');
  */
 const getDashboardData = async () => {
     // Get active banners
-    const banners = await Banner.find({ isActive: true })
+    const banners = await Banner.find({ isActive: true, type: 'user' })
         .sort({ order: 1 })
         .populate('category', '_id name')
-        .select('title image category order')
+        .select('title description image category order')
         .then(docs => docs.filter(doc => doc.category)); // Filter out orphaned banners
 
     // Get active service sections
@@ -153,7 +153,8 @@ const getAllBanners = async (query = {}) => {
 
     const banners = await Banner.find(filter)
         .sort({ order: 1 })
-        .populate('category', 'name');
+        .populate('category', 'name')
+        .select('title description image category order isActive type');
     return banners;
 };
 
@@ -183,6 +184,16 @@ const deleteBanner = async (id) => {
     return banner;
 };
 
+/**
+ * USER: Get vendor banners
+ */
+const getVendorBanners = async () => {
+    const banners = await Banner.find({ isActive: true, type: 'vendor' })
+        .sort({ order: 1 })
+        .select('title description image order');
+    return banners;
+};
+
 module.exports = {
     getDashboardData,
     getAllServiceSections,
@@ -192,5 +203,6 @@ module.exports = {
     getAllBanners,
     createBanner,
     updateBanner,
-    deleteBanner
+    deleteBanner,
+    getVendorBanners
 };

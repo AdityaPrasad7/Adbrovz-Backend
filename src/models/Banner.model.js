@@ -11,6 +11,10 @@ const bannerSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        description: {
+            type: String,
+            trim: true,
+        },
         type: {
             type: String,
             enum: ['user', 'vendor'],

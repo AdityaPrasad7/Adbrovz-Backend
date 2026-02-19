@@ -434,7 +434,7 @@ const adminLogin = async ({ username, password }, req = null) => {
   const admin = await Admin.findOne({ username }).select('+password');
 
   if (!admin) {
-    throw new ApiError(401, MESSAGES.AUTH.INVALID_CREDENTIALS);
+    throw new ApiError(401, 'Invalid username or password');
   }
 
   if (!admin.isActive) {
