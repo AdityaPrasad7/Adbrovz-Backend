@@ -11,10 +11,17 @@ const bannerSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        type: {
+            type: String,
+            enum: ['user', 'vendor'],
+            default: 'user',
+        },
         category: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Category',
-            required: true,
+            required: function () {
+                return this.type === 'user';
+            },
         },
         order: {
             type: Number,

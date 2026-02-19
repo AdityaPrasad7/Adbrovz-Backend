@@ -26,7 +26,6 @@ const vendorSchema = new mongoose.Schema(
     },
     pin: {
       type: String,
-      required: true,
       select: false,
     },
     role: {
@@ -45,18 +44,33 @@ const vendorSchema = new mongoose.Schema(
     workPincodes: [{
       type: String,
     }],
-    identityNumber: {
-      type: String,
-      trim: true,
-    },
+    selectedCategories: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+    }],
     selectedSubcategories: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Subcategory',
     }],
+    selectedServices: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
+    }],
     registrationStep: {
       type: String,
-      enum: ['SIGNUP', 'SERVICES_SELECTED', 'MEMBERSHIP_PAID', 'PLAN_PAID', 'COMPLETED', 'PENDING'],
+      enum: ['SIGNUP', 'PIN_PENDING', 'SERVICES_SELECTED', 'MEMBERSHIP_PAID', 'PLAN_PAID', 'COMPLETED', 'PENDING', 'SIGNUP_COMPLETED'],
       default: 'PENDING',
+    },
+    tcAcceptance: {
+      type: Boolean,
+      default: false,
+    },
+    ppAcceptance: {
+      type: Boolean,
+      default: false,
+    },
+    policiesAcceptedAt: {
+      type: Date,
     },
     documents: {
       photo: {
@@ -126,6 +140,10 @@ const vendorSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isOnline: {
+      type: Boolean,
+      default: false,
     },
     isSuspended: {
       type: Boolean,

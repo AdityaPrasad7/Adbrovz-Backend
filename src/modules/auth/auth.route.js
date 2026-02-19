@@ -6,6 +6,7 @@ const {
   validateInitiateUserSignup,
   validateCompleteUserSignup,
   validateVendorSignup,
+  validateVendorSetPIN,
   validateAdminSignup,
   validateAdminLogin,
   validateLogin,
@@ -18,6 +19,7 @@ const {
 } = require('../../validators/auth.validator');
 const { authLimiter, otpLimiter } = require('../../middlewares/rateLimiter.middleware');
 const { authenticate, authorize } = require('../../middlewares/auth.middleware');
+const { uploadVendorDocs, processVendorDocs } = require('../../middlewares/vendorUpload.middleware');
 const { ROLES } = require('../../constants/roles');
 
 // ======================== USER ROUTES ========================
@@ -35,8 +37,8 @@ router.post('/users/reset-pin', authLimiter, validateResetPIN, authController.us
 router.post('/users/logout', authController.userLogout);
 
 // ======================== VENDOR ROUTES ========================
-router.post('/vendors/signup', authLimiter, validateVendorSignup, authController.vendorSignup);
-router.post('/vendors/verify-otp', authLimiter, validateOTP, authController.vendorVerifyOTP);
+router.post('/vendors/signup', authLimiter, uploadVendorDocs, processVendorDocs, validateVendorSignup, authController.vendorSignup);
+router.post('/vendors/set-pin', authLimiter, validateVendorSetPIN, authController.vendorCompleteSignup);
 router.post('/vendors/login', authLimiter, validateLogin, authController.vendorLogin);
 router.post('/vendors/send-otp', otpLimiter, authController.vendorSendOTP);
 router.post('/vendors/reset-pin', authLimiter, validateResetPIN, authController.vendorResetPIN);

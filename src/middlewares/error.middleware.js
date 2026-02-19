@@ -18,7 +18,7 @@ const errorHandler = (err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     error = new ApiError(400, 'Invalid JSON payload');
   }
-
+ 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = 'Resource not found';

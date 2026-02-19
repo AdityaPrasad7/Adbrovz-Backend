@@ -231,6 +231,30 @@ const purchaseCreditPlan = async (vendorId, { planId }) => {
     return { message: 'Credit plan purchased successfully. You can now receive lead calls.' };
 };
 
+/**
+ * Vendor: Toggle Online/Offline Status
+ */
+const toggleOnlineStatus = async (vendorId, isOnline) => {
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) throw new ApiError(404, 'Vendor not found');
+
+    if (!vendor.isVerified || vendor.documentStatus !== 'approved') {
+        throw new ApiError(403, 'Your account must be approved before going online');
+    }
+
+    if (vendor.isSuspended) {
+        throw new ApiError(403, 'Your account is suspended. Please contact support.');
+    }
+
+    vendor.isOnline = isOnline;
+    await vendor.save();
+
+    return {
+        isOnline: vendor.isOnline,
+        message: `You are now ${vendor.isOnline ? 'online' : 'offline'}`,
+    };
+};
+
 module.exports = {
     getAllVendors,
     selectServices,
@@ -241,5 +265,6 @@ module.exports = {
     verifyAllDocuments,
     toggleVendorSuspension,
     rejectVendorAccount,
+    toggleOnlineStatus,
 };
 

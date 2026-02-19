@@ -12,7 +12,6 @@ const Admin = require('../../models/Admin.model');
 const MESSAGES = require('../../constants/messages');
 const config = require('../../config/env');
 
-// ======================== USER SIGNUP ========================
 const userSignup = async ({ phoneNumber, name, email, pin, confirmPin, acceptedPolicies }) => {
   // Check if user already exists
   const existingUser = await User.findOne({ phoneNumber });
@@ -194,6 +193,54 @@ const completeUserSignup = async ({ signupId, pin, confirmPin, acceptedPolicies 
   };
 };
 
+/**
+ * Vendor Step 2: Set PIN & Complete Signup
+ */
+const completeVendorSignup = async ({ signupId, pin, confirmPin, acceptedTerms, acceptedPrivacyPolicy }) => {
+  if (pin !== confirmPin) {
+    throw new ApiError(400, MESSAGES.AUTH.PIN_MISMATCH);
+  }
+
+  // Retrieve data from cache
+  const signupKey = `signup:session:vendor:${signupId}`;
+  const cachedDataStr = await cacheService.get(signupKey);
+
+  if (!cachedDataStr) {
+    throw new ApiError(400, 'Signup session expired or invalid ID. Please start again.');
+  }
+
+  const { vendorId } = JSON.parse(cachedDataStr);
+
+  // Find vendor
+  const vendor = await Vendor.findById(vendorId);
+  if (!vendor) {
+    throw new ApiError(404, 'Vendor not found');
+  }
+
+  // Hash PIN
+  const hashedPIN = await hashPIN(pin);
+
+  // Update vendor
+  vendor.pin = hashedPIN;
+  vendor.tcAcceptance = String(acceptedTerms) === 'true';
+  vendor.ppAcceptance = String(acceptedPrivacyPolicy) === 'true';
+  vendor.policiesAcceptedAt = new Date();
+  vendor.registrationStep = 'SIGNUP_COMPLETED';
+  vendor.documentStatus = 'pending';
+
+  await vendor.save();
+
+  // Delete signup session
+  await cacheService.del(signupKey);
+
+  return {
+    vendorId: vendor._id,
+    vendorID: vendor.vendorID,
+    phoneNumber: vendor.phoneNumber,
+    message: 'Vendor registration completed successfully. Please wait for document approval.',
+  };
+};
+
 // ======================== NEW TWO-STEP LOGIN ========================
 
 /**
@@ -261,8 +308,13 @@ const completeUserLogin = async ({ loginId, pin }, req = null) => {
   return result;
 };
 
-// ======================== VENDOR SIGNUP ========================
-const vendorSignup = async ({ phoneNumber, name, email, pin, confirmPin, identityNumber, photo, idProof, addressProof, workState, workCity, workPincodes, acceptedTerms, acceptedPrivacyPolicy }) => {
+// ======================== VENDOR SIGNUP (Step 1: Data) ========================
+const vendorSignup = async ({
+  phoneNumber, name, email,
+  photo, idProof, addressProof, workProof, bankProof, policeVerification,
+  workState, workCity, workPincodes,
+  selectedCategories, selectedSubcategories, selectedServices
+}) => {
   // Check if vendor already exists
   const existingVendor = await Vendor.findOne({ phoneNumber });
 
@@ -271,77 +323,67 @@ const vendorSignup = async ({ phoneNumber, name, email, pin, confirmPin, identit
     throw new ApiError(400, 'Vendor with this phone number already exists');
   }
 
-  // Validate PIN match
-  if (pin !== confirmPin) {
-    throw new ApiError(400, MESSAGES.AUTH.PIN_MISMATCH);
-  }
-
-  // Validate identity details
-  if (!identityNumber) {
-    throw new ApiError(400, 'Identity number is required');
-  }
 
   // Validate work details
   if (!workState || !workCity) {
     throw new ApiError(400, 'Work state and city are required for vendor registration');
   }
 
-  // Hash PIN
-  const hashedPIN = await hashPIN(pin);
+  // Document object helper
+  const docObj = {
+    photo: { url: photo || '' },
+    idProof: { url: idProof || '' },
+    addressProof: { url: addressProof || '' },
+    workProof: { url: workProof || '' },
+    bankProof: { url: bankProof || '' },
+    policeVerification: { url: policeVerification || '' }
+  };
 
-  // Generate OTP
-  const otp = generateOTP(config.OTP_LENGTH);
-  const otpKey = `otp:signup:vendor:${phoneNumber}`;
-  const otpExpiry = config.OTP_EXPIRE_MINUTES * 60;
-
-  // Store OTP in cache
-  await cacheService.set(otpKey, otp, otpExpiry);
-
-  // If vendor exists but not approved, update their info
-  if (existingVendor && existingVendor.documentStatus !== 'approved') {
+  // Create or Update Vendor
+  let vendor;
+  if (existingVendor) {
     existingVendor.name = name;
     existingVendor.email = email;
-    existingVendor.pin = hashedPIN;
-    if (photo) existingVendor.documents.photo.url = photo;
-    if (idProof) existingVendor.documents.idProof.url = idProof;
-    if (addressProof) existingVendor.documents.addressProof.url = addressProof;
+    existingVendor.documents = docObj;
     existingVendor.workState = workState;
     existingVendor.workCity = workCity;
     existingVendor.workPincodes = workPincodes;
-    existingVendor.registrationStep = 'SIGNUP';
+    existingVendor.selectedCategories = selectedCategories;
+    existingVendor.selectedSubcategories = selectedSubcategories;
+    existingVendor.selectedServices = selectedServices;
+    existingVendor.registrationStep = 'PIN_PENDING';
     await existingVendor.save();
-
-    return {
-      vendorId: existingVendor._id,
-      phoneNumber: existingVendor.phoneNumber,
-      message: 'OTP resent to your phone number',
-    };
+    vendor = existingVendor;
+  } else {
+    vendor = await Vendor.create({
+      phoneNumber,
+      name,
+      email,
+      vendorID: `V${phoneNumber}`,
+      documents: docObj,
+      workState,
+      workCity,
+      workPincodes: workPincodes || [],
+      selectedCategories: selectedCategories || [],
+      selectedSubcategories: selectedSubcategories || [],
+      selectedServices: selectedServices || [],
+      documentStatus: 'pending',
+      registrationStep: 'PIN_PENDING',
+    });
   }
 
-  // Create new vendor (pending document verification)
-  const vendor = await Vendor.create({
-    phoneNumber,
-    name,
-    email,
-    pin: hashedPIN,
-    vendorID: `V${Date.now()}`, // Temporary, will be updated after verification
-    identityNumber,
-    documents: {
-      photo: { url: photo || '' },
-      idProof: { url: idProof || '' },
-      addressProof: { url: addressProof || '' },
-    },
-    workState,
-    workCity,
-    workPincodes: workPincodes || [],
-    documentStatus: 'pending',
-    registrationStep: 'SIGNUP',
-  });
+  // Generate a signup session for PIN setup (Skipping OTP per request)
+  const signupId = crypto.randomUUID();
+  const signupKey = `signup:session:vendor:${signupId}`;
+  const signupExpiry = 3600; // 1 hour
+
+  await cacheService.set(signupKey, JSON.stringify({ phoneNumber, vendorId: vendor._id }), signupExpiry);
 
   return {
+    signupId,
     vendorId: vendor._id,
     phoneNumber: vendor.phoneNumber,
-    message: 'OTP sent to your phone number',
+    message: 'Profile registered. Please set your PIN.',
   };
 };
 
@@ -481,68 +523,43 @@ const superAdminResetPassword = async (adminId, { newPassword, confirmPassword }
   return { message: 'Admin password reset successfully' };
 };
 
-// ======================== VERIFY OTP (for user/vendor signup) ========================
+// ======================== VERIFY OTP (for user signup) ========================
 const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
-  let model, otpKey, userIdField;
+  let model, otpKey;
 
-  // Determine which model to use based on role
+  // Since vendors skip OTP, this is now primarily for users
   if (role === 'vendor') {
-    model = Vendor;
-    otpKey = `otp:signup:vendor:${phoneNumber}`;
-    userIdField = 'vendorID';
-  } else {
-    model = User;
-    otpKey = `otp:signup:user:${phoneNumber}`;
-    userIdField = 'userID';
+    throw new ApiError(400, 'OTP verification is not required for vendors');
   }
+
+  model = User;
+  otpKey = `otp:signup:user:${phoneNumber}`;
 
   const user = await model.findOne({ phoneNumber }).select('+pin');
   if (!user) {
     throw new ApiError(404, MESSAGES.USER.NOT_FOUND);
   }
 
-  // Check if already verified/approved
-  if (role === 'vendor' && user.documentStatus === 'approved') {
-    throw new ApiError(400, 'Vendor already verified');
-  }
-
-  if (role === 'user' && user.isVerified) {
+  // Check if already verified
+  if (user.isVerified) {
     throw new ApiError(400, 'User already verified');
   }
 
   // Verify OTP
   if (otp !== '1234') {
     const storedOTP = await cacheService.get(otpKey);
-    // console.log(`[DEBUG] Verifying Signup OTP for Role ${role}: ${phoneNumber}, Key: ${otpKey}`);
-    // console.log(`[DEBUG] Stored OTP: ${storedOTP}, Provided OTP: ${otp}`);
-
     if (!storedOTP || storedOTP !== otp) {
       throw new ApiError(400, MESSAGES.AUTH.INVALID_OTP);
     }
   }
 
-  // Update user/vendor
-  if (role === 'vendor') {
-    user.documentStatus = 'pending'; // Awaiting document approval
-    user.vendorID = `V${user.phoneNumber}`;
-  } else {
-    user.isVerified = true;
-    user.userID = `U${user.phoneNumber}`;
-  }
-
+  // Update user
+  user.isVerified = true;
+  user.userID = `U${user.phoneNumber}`;
   await user.save();
 
   // Delete OTP from cache
   await cacheService.del(otpKey);
-
-  // For vendor, just return success (no token yet until documents are approved)
-  if (role === 'vendor') {
-    return {
-      vendorId: user._id,
-      phoneNumber: user.phoneNumber,
-      message: 'OTP verified successfully. Please upload required documents for approval.',
-    };
-  }
 
   // For user, generate tokens
   const token = generateToken({ userId: user._id, role: user.role });
@@ -575,6 +592,7 @@ const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
     },
     token,
     refreshToken,
+    message: 'Signup completed successfully.',
   };
 };
 
@@ -862,6 +880,7 @@ module.exports = {
   initiateUserSignup,
   completeUserSignup,
   vendorSignup,
+  completeVendorSignup,
   adminSignup,
   adminLogin,
   superAdminResetPassword,

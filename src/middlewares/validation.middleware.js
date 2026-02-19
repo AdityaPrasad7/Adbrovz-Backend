@@ -9,6 +9,9 @@ const asyncHandler = require('../utils/asyncHandler');
  */
 const validate = (schema, source = 'body') => {
   return asyncHandler(async (req, res, next) => {
+    if (req.url.includes('/vendors/signup')) {
+      console.log(`[DEBUG] Validating ${req.url} [${source}]:`, JSON.stringify(req[source], null, 2));
+    }
     const { error, value } = schema.validate(req[source], {
       abortEarly: false, // Return all errors, not just the first one
       stripUnknown: true, // Remove unknown fields

@@ -9,6 +9,11 @@ router.post('/register/:vendorId/select-services', vendorController.selectServic
 router.post('/register/:vendorId/purchase-membership', vendorController.purchaseMembership);
 router.post('/register/:vendorId/purchase-plan', vendorController.purchaseCreditPlan);
 
+// Vendor status routes
+// Vendor status routes
+router.patch('/:vendorId/status', authenticate, authorize(ROLES.VENDOR, ROLES.ADMIN), vendorController.toggleOnlineStatus);
+
+
 // Public/Common routes
 router.get('/plans', async (req, res) => {
     const CreditPlan = require('../../models/CreditPlan.model');

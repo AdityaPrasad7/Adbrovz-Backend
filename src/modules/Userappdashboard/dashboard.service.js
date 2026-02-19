@@ -145,8 +145,13 @@ const deleteServiceSection = async (id) => {
 /**
  * ADMIN: Get all banners
  */
-const getAllBanners = async () => {
-    const banners = await Banner.find()
+const getAllBanners = async (query = {}) => {
+    const filter = {};
+    if (query.type) {
+        filter.type = query.type;
+    }
+
+    const banners = await Banner.find(filter)
         .sort({ order: 1 })
         .populate('category', 'name');
     return banners;

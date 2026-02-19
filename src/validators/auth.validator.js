@@ -107,7 +107,7 @@ const completeUserSignupSchema = Joi.object({
     }),
 });
 
-// Vendor Signup schema
+// Vendor Signup schema (Step 1: Profile & Documents)
 const vendorSignupSchema = Joi.object({
   phoneNumber: Joi.string()
     .pattern(phonePattern)
@@ -120,6 +120,23 @@ const vendorSignupSchema = Joi.object({
     .email()
     .optional()
     .allow('', null),
+  photo: Joi.string().optional().allow('', null),
+  idProof: Joi.string().optional().allow('', null),
+  addressProof: Joi.string().optional().allow('', null),
+  workProof: Joi.string().optional().allow('', null),
+  bankProof: Joi.string().optional().allow('', null),
+  policeVerification: Joi.string().optional().allow('', null),
+  workState: Joi.string().required(),
+  workCity: Joi.string().required(),
+  workPincodes: Joi.array().items(Joi.string()).single().optional().default([]),
+  selectedCategories: Joi.array().items(Joi.string()).single().optional().default([]),
+  selectedSubcategories: Joi.array().items(Joi.string()).single().optional().default([]),
+  selectedServices: Joi.array().items(Joi.string()).single().optional().default([]),
+});
+
+// Vendor Set PIN schema (Step 2: PIN & Policies)
+const vendorSetPINSchema = Joi.object({
+  signupId: Joi.string().required(),
   pin: Joi.string()
     .length(4)
     .pattern(/^\d+$/)
@@ -127,13 +144,6 @@ const vendorSignupSchema = Joi.object({
   confirmPin: Joi.string()
     .valid(Joi.ref('pin'))
     .required(),
-  identityNumber: Joi.string().required(),
-  photo: Joi.string().optional().allow('', null),
-  idProof: Joi.string().optional().allow('', null),
-  addressProof: Joi.string().optional().allow('', null),
-  workState: Joi.string().required(),
-  workCity: Joi.string().required(),
-  workPincodes: Joi.array().items(Joi.string()).optional(),
   acceptedTerms: Joi.boolean().valid(true).required(),
   acceptedPrivacyPolicy: Joi.boolean().valid(true).required(),
 });
@@ -253,6 +263,7 @@ module.exports = {
   validateInitiateUserSignup: validate(initiateUserSignupSchema, 'body'),
   validateCompleteUserSignup: validate(completeUserSignupSchema, 'body'),
   validateVendorSignup: validate(vendorSignupSchema, 'body'),
+  validateVendorSetPIN: validate(vendorSetPINSchema, 'body'),
   validateAdminSignup: validate(adminSignupSchema, 'body'),
   validateAdminLogin: validate(adminLoginSchema, 'body'),
   validateLogin: validate(loginSchema, 'body'),

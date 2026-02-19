@@ -86,9 +86,8 @@ const vendorSignup = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, result, result.message));
 });
 
-const vendorVerifyOTP = asyncHandler(async (req, res) => {
-  const { phoneNumber, otp } = req.body;
-  const result = await authService.verifySignupOTP(phoneNumber, otp, 'vendor', req);
+const vendorCompleteSignup = asyncHandler(async (req, res) => {
+  const result = await authService.completeVendorSignup(req.body);
   res.status(200).json(new ApiResponse(200, result, result.message));
 });
 
@@ -187,7 +186,7 @@ module.exports = {
   userLogout,
   // Vendor
   vendorSignup,
-  vendorVerifyOTP,
+  vendorCompleteSignup,
   vendorLogin,
   vendorSendOTP,
   vendorResetPIN,

@@ -47,10 +47,23 @@ const purchaseCreditPlan = asyncHandler(async (req, res) => {
     );
 });
 
+/**
+ * Toggle online/offline status
+ */
+const toggleOnlineStatus = asyncHandler(async (req, res) => {
+    const { vendorId } = req.params;
+    const { isOnline } = req.body;
+    const result = await vendorService.toggleOnlineStatus(vendorId, isOnline);
+    res.status(200).json(
+        new ApiResponse(200, result, result.message)
+    );
+});
+
 module.exports = {
     getAllVendors,
     selectServices,
     purchaseMembership,
     purchaseCreditPlan,
+    toggleOnlineStatus,
 };
 
