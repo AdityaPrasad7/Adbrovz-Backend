@@ -596,6 +596,62 @@ const verifySignupOTP = async (phoneNumber, otp, role = 'user', req = null) => {
   };
 };
 
+// ======================== VENDOR TWO-STEP LOGIN ========================
+
+/**
+ * Step 1: Initiate Vendor Login
+ * - Checks if vendor exists and is approved
+ * - Creates a login session and returns loginId
+ */
+const initiateVendorLogin = async ({ phoneNumber }) => {
+  const vendor = await Vendor.findOne({ phoneNumber });
+
+  if (!vendor) {
+    throw new ApiError(401, MESSAGES.AUTH.INVALID_CREDENTIALS);
+  }
+
+  if (vendor.documentStatus !== 'approved') {
+    throw new ApiError(403, 'Vendor account is not approved yet');
+  }
+
+  if (vendor.isLocked && vendor.lockUntil > Date.now()) {
+    throw new ApiError(403, MESSAGES.AUTH.ACCOUNT_LOCKED);
+  }
+
+  const loginId = crypto.randomUUID();
+  const loginKey = `login:session:vendor:${loginId}`;
+  const loginExpiry = 600; // 10 minutes
+
+  await cacheService.set(loginKey, JSON.stringify({ phoneNumber, role: 'vendor' }), loginExpiry);
+
+  return {
+    loginId,
+    message: 'Vendor verified. Please enter your PIN.',
+  };
+};
+
+/**
+ * Step 2: Complete Vendor Login
+ * - Verifies PIN using the session loginId
+ * - Returns tokens
+ */
+const completeVendorLogin = async ({ loginId, pin }, req = null) => {
+  const loginKey = `login:session:vendor:${loginId}`;
+  const sessionDataStr = await cacheService.get(loginKey);
+
+  if (!sessionDataStr) {
+    throw new ApiError(401, 'Login session expired or invalid. Please start again.');
+  }
+
+  const { phoneNumber, role } = JSON.parse(sessionDataStr);
+
+  const result = await login(phoneNumber, pin, role, req);
+
+  await cacheService.del(loginKey);
+
+  return result;
+};
+
 // ======================== LOGIN (for user/vendor) ========================
 const login = async (phoneNumber, pin, role = 'user', req = null) => {
   let user, model;
@@ -891,6 +947,8 @@ module.exports = {
   refreshToken,
   initiateUserLogin,
   completeUserLogin,
+  initiateVendorLogin,
+  completeVendorLogin,
   verifyResetPINOTP,
   completeResetPIN,
   sendPostLoginSMS,

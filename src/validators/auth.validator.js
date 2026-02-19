@@ -197,6 +197,29 @@ const completeLoginSchema = Joi.object({
   pin: Joi.string().length(4).pattern(/^\d+$/).required(),
 });
 
+// Vendor Initiate Login schema (Step 1)
+const vendorInitiateLoginSchema = Joi.object({
+  phoneNumber: Joi.string()
+    .pattern(phonePattern)
+    .required()
+    .messages({
+      'string.pattern.base': 'Invalid phone number format.',
+      'any.required': 'Phone number is required',
+    }),
+});
+
+// Vendor Complete Login schema (Step 2)
+const vendorCompleteLoginSchema = Joi.object({
+  loginId: Joi.string().required().messages({
+    'any.required': 'Login ID is required',
+  }),
+  pin: Joi.string().length(4).pattern(/^\d+$/).required().messages({
+    'string.length': 'PIN must be exactly 4 digits',
+    'string.pattern.base': 'PIN must contain only numbers',
+    'any.required': 'PIN is required',
+  }),
+});
+
 // OTP verification schema
 const otpSchema = Joi.object({
   phoneNumber: Joi.string()
@@ -269,6 +292,8 @@ module.exports = {
   validateLogin: validate(loginSchema, 'body'),
   validateInitiateLogin: validate(initiateLoginSchema, 'body'),
   validateCompleteLogin: validate(completeLoginSchema, 'body'),
+  validateVendorInitiateLogin: validate(vendorInitiateLoginSchema, 'body'),
+  validateVendorCompleteLogin: validate(vendorCompleteLoginSchema, 'body'),
   validateOTP: validate(otpSchema, 'body'),
   validateResetPIN: validate(resetPinSchema, 'body'),
   validateVerifyResetOTP: validate(verifyResetOTPSchema, 'body'),

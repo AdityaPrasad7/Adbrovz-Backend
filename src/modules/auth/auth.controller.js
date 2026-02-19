@@ -97,6 +97,16 @@ const vendorLogin = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result, MESSAGES.AUTH.LOGIN_SUCCESS));
 });
 
+const vendorInitiateLogin = asyncHandler(async (req, res) => {
+  const result = await authService.initiateVendorLogin(req.body);
+  res.status(200).json(new ApiResponse(200, result, result.message));
+});
+
+const vendorCompleteLogin = asyncHandler(async (req, res) => {
+  const result = await authService.completeVendorLogin(req.body, req);
+  res.status(200).json(new ApiResponse(200, result, MESSAGES.AUTH.LOGIN_SUCCESS));
+});
+
 const vendorSendOTP = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body;
   const result = await authService.sendOTP(phoneNumber, 'vendor');
@@ -188,6 +198,8 @@ module.exports = {
   vendorSignup,
   vendorCompleteSignup,
   vendorLogin,
+  vendorInitiateLogin,
+  vendorCompleteLogin,
   vendorSendOTP,
   vendorResetPIN,
   vendorLogout,
