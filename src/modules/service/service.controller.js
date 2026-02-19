@@ -150,6 +150,14 @@ const globalSearch = asyncHandler(async (req, res) => {
     );
 });
 
+// Get nested catalogue
+const getServiceCatalogue = asyncHandler(async (req, res) => {
+    const catalogue = await serviceService.getServiceCatalogue();
+    res.status(200).json(
+        new ApiResponse(200, catalogue, 'Service catalogue retrieved successfully')
+    );
+});
+
 module.exports = {
     getCategories,
     getSubcategories,
@@ -166,5 +174,6 @@ module.exports = {
     createService,
     updateService,
     deleteService,
-    getCategoriesWithSubcategories
+    getCategoriesWithSubcategories,
+    getServiceCatalogue
 };

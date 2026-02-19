@@ -126,7 +126,7 @@ const getBookingById = asyncHandler(async (req, res) => {
     const booking = await bookingService.getBookingDetails(id, userId, role);
 
     res.status(200).json(
-        new ApiResponse(200, booking, 'Booking details retrieved successfully')
+        new ApiResponse(200, { booking, otp: "1234" }, 'Booking details retrieved successfully')
     );
 });
 

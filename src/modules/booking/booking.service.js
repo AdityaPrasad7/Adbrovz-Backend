@@ -136,7 +136,7 @@ const getBookingDetails = async (bookingId, userId, role) => {
     }
 
     const booking = await Booking.findOne(query)
-        .populate('services.service', 'title adminPrice photo')
+        .populate('services.service')
         .populate('vendor', 'name phoneNumber photo')
         .populate('user', 'name phoneNumber photo');
 
@@ -294,13 +294,15 @@ const rescheduleBooking = async (userId, bookingId, { date, time }) => {
 const getBookingsByUser = async (userId) =>
     Booking.find({ user: userId })
         .populate('services.service', 'title adminPrice photo')
-        .populate('vendor', 'name phoneNumber')
+        .populate('vendor', 'name phoneNumber photo')
+        .populate('user', 'name phoneNumber photo')
         .sort({ createdAt: -1 });
 
 const getBookingsByVendor = async (vendorId) =>
     Booking.find({ vendor: vendorId })
         .populate('services.service', 'title adminPrice photo')
-        .populate('user', 'name phoneNumber')
+        .populate('user', 'name phoneNumber photo')
+        .populate('vendor', 'name phoneNumber photo')
         .sort({ createdAt: -1 });
 
 /**

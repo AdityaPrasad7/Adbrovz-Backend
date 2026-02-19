@@ -357,7 +357,6 @@ const getAllCategoriesWithSubcategories = async () => {
         },
         {
             $project: {
-                _id: 1,
                 name: 1,
                 description: 1,
                 icon: 1,
@@ -368,9 +367,36 @@ const getAllCategoriesWithSubcategories = async () => {
         }
     ]);
 
-    return result.map(cat => ({
-        ...cat,
-        id: cat._id.toString()
+    // Recursive helper to clean IDs and remove internal fields
+    const cleanDoc = (doc) => {
+        if (!doc) return doc;
+        const cleaned = { ...doc, id: doc._id?.toString() || doc.id };
+        delete cleaned._id;
+        delete cleaned.__v;
+
+        if (cleaned.subcategories) {
+            cleaned.subcategories = cleaned.subcategories.map(cleanDoc);
+        }
+        if (cleaned.services) {
+            cleaned.services = cleaned.services.map(cleanDoc);
+        }
+        return cleaned;
+    };
+
+    return result.map(cleanDoc);
+};
+
+/**
+ * Public: Get flat list of all services (name and ID only)
+ */
+const getServiceCatalogue = async () => {
+    const services = await Service.find({ isActive: true })
+        .select('title _id')
+        .sort({ title: 1 });
+
+    return services.map(service => ({
+        name: service.title,
+        serviceId: service._id
     }));
 };
 
@@ -389,5 +415,6 @@ module.exports = {
     createService,
     updateService,
     deleteService,
-    getAllCategoriesWithSubcategories
+    getAllCategoriesWithSubcategories,
+    getServiceCatalogue
 };
