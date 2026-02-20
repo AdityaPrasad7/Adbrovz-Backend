@@ -46,9 +46,19 @@ const checkFeedback = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, result, 'Feedback check done'));
 });
 
+/**
+ * GET /api/v1/feedback/all
+ * Admin gets all feedback submitted on the platform
+ */
+const getAllFeedback = asyncHandler(async (req, res) => {
+    const result = await feedbackService.getAllFeedback();
+    res.status(200).json(new ApiResponse(200, result, 'All platform feedback fetched'));
+});
+
 module.exports = {
     submitFeedback,
     getVendorFeedback,
     getMyFeedback,
     checkFeedback,
+    getAllFeedback,
 };

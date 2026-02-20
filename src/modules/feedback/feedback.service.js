@@ -120,9 +120,31 @@ const hasFeedback = async (userId, bookingId) => {
     return { hasFeedback: !!existing };
 };
 
+/**
+ * Get all feedback details (admin-facing)
+ */
+const getAllFeedback = async () => {
+    const feedbacks = await Feedback.find()
+        .populate('user', 'name phoneNumber email')
+        .populate('vendor', 'name phoneNumber')
+        .populate('booking', 'bookingID scheduledDate status')
+        .sort({ createdAt: -1 });
+
+    return feedbacks.map((f) => ({
+        id: f._id,
+        rating: f.rating,
+        review: f.review,
+        user: f.user,
+        vendor: f.vendor || { name: 'N/A' },
+        booking: f.booking,
+        createdAt: f.createdAt,
+    }));
+};
+
 module.exports = {
     submitFeedback,
     getVendorFeedback,
     getUserFeedback,
     hasFeedback,
+    getAllFeedback,
 };
