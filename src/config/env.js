@@ -7,7 +7,7 @@ const config = {
   API_VERSION: process.env.API_VERSION || 'v1',
 
   // Database
-MONGODB_URI: process.env.MONGODB_URI || "mongodb+srv://adityaprasadtripathy20_db_user:0SJ3JqKGzOYtTDsK@cluster0.fhbj9mn.mongodb.net/",
+  MONGODB_URI: process.env.MONGODB_URI || "mongodb+srv://adityaprasadtripathy20_db_user:0SJ3JqKGzOYtTDsK@cluster0.fhbj9mn.mongodb.net/",
   MONGODB_URI_TEST: process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/adbrovz_test',
 
   // JWT
@@ -43,9 +43,9 @@ MONGODB_URI: process.env.MONGODB_URI || "mongodb+srv://adityaprasadtripathy20_db
   GCP_API_KEY: process.env.GCP_API_KEY,
 
   // Cloudinary
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'du0w84p1k',
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '153674889121524',
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || 'SLAN6tiLgckA3t1MaLvp8GGQ4rI',
 
   // Redis
   REDIS_HOST: process.env.REDIS_HOST || 'localhost',
