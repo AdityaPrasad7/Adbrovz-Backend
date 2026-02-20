@@ -17,50 +17,37 @@ const getUserById = async (userId) => {
     id: user._id,
     image: user.photo || '',
     name: user.name,
-    mobileNumber: user.phoneNumber,
-    mail: user.email,
-    address: user.address || '',
-    city: user.city || '',
-    state: user.state || '',
-    zipcode: user.zipcode || '',
-    country: user.country || 'India',
-    coins: user.coins || 0,
-    userID: user.userID,
-    status: user.status
+    email: user.email,
+    phone: user.phoneNumber,
   };
 };
 
 const updateUser = async (userId, updateData, req = null) => {
-  const allowedUpdates = ['name', 'email', 'photo', 'image', 'address', 'city', 'state', 'zipcode', 'country', 'mobileNumber'];
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, MESSAGES.USER.NOT_FOUND);
+  }
+
+  const allowedUpdates = ['name', 'email', 'photo', 'image'];
   const updates = Object.keys(updateData);
   const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
   if (!isValidOperation) {
-    throw new ApiError(400, 'Invalid updates');
+    throw new ApiError(400, 'Invalid updates. Only name, email, and image can be updated.');
   }
 
-  // Map image/photo and mobileNumber to phoneNumber if provided
-  if (updateData.image) {
-    updateData.photo = updateData.image;
-    delete updateData.image;
+  // Explicitly update fields
+  if (updateData.name) user.name = updateData.name;
+  if (updateData.email) user.email = updateData.email;
+
+  // Map image/photo
+  if (updateData.image || updateData.photo) {
+    user.photo = updateData.image || updateData.photo;
   }
 
-  if (updateData.mobileNumber) {
-    updateData.phoneNumber = updateData.mobileNumber;
-    delete updateData.mobileNumber;
-  }
+  console.log('DEBUG: updateUser Service Data before save:', { userId, updateData });
 
-  console.log('DEBUG: updateUser Service Data:', { userId, updateData });
-
-  const user = await User.findByIdAndUpdate(
-    userId,
-    updateData,
-    { new: true, runValidators: true }
-  ).select('-pin -failedAttempts -lockUntil');
-
-  if (!user) {
-    throw new ApiError(404, MESSAGES.USER.NOT_FOUND);
-  }
+  await user.save();
 
   const result = await getUserById(userId);
   console.log('DEBUG: updateUser Service Result:', result);
