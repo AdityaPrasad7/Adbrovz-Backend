@@ -11,6 +11,7 @@ const vendorRoutes = require('../modules/vendor/vendor.route');
 const mediaRoutes = require('../modules/media/media.route');
 const bookingRoutes = require('../modules/booking/booking.route');
 const disputeRoutes = require('../modules/dispute/dispute.route');
+const feedbackRoutes = require('../modules/feedback/feedback.route');
 
 // Health check
 router.get('/health', (req, res) => {
@@ -39,6 +40,7 @@ router.use('/vendors', vendorRoutes);
 router.use('/media', mediaRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/disputes', disputeRoutes);
+router.use('/feedback', feedbackRoutes);
 
 module.exports = router;
 
