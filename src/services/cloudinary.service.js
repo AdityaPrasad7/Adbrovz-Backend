@@ -5,6 +5,8 @@ const config = require('../config/env');
 // Configure Cloudinary
 if (!config.CLOUDINARY_CLOUD_NAME || !config.CLOUDINARY_API_KEY || !config.CLOUDINARY_API_SECRET) {
     console.error('❌ Cloudinary configuration missing! Check your environment variables.');
+} else {
+    console.log('✅ Cloudinary initialized with cloud_name:', config.CLOUDINARY_CLOUD_NAME);
 }
 
 cloudinary.config({
@@ -48,7 +50,12 @@ const uploadToCloudinary = async (fileBuffer, folder, publicId = null) => {
         );
 
         // Convert buffer to stream and pipe to Cloudinary
-        Readable.from(fileBuffer).pipe(uploadStream);
+        const stream = Readable.from(fileBuffer);
+        stream.on('error', (err) => {
+            console.error('Buffer stream error:', err);
+            reject(err);
+        });
+        stream.pipe(uploadStream);
     });
 };
 

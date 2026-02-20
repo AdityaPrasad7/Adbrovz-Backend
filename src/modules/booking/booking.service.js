@@ -264,7 +264,13 @@ const cancelBooking = async (userId, bookingId, reason) => {
     };
 
     await booking.save();
-    return booking;
+
+    const populatedBooking = await Booking.findById(booking._id)
+        .populate('services.service', 'title adminPrice photo')
+        .populate('vendor', 'name phoneNumber photo')
+        .populate('user', 'name phoneNumber photo');
+
+    return populatedBooking || booking;
 };
 
 /**
