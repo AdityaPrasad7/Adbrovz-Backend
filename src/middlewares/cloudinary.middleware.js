@@ -32,10 +32,14 @@ const uploadToCloudinary = (folder) => {
         console.log('DEBUG: Cloudinary Middleware Start', {
             hasFile: !!req.file,
             fieldname: req.file?.fieldname,
+            mimetype: req.file?.mimetype,
+            size: req.file?.size,
+            bufferLength: req.file?.buffer?.length,
             folder
         });
 
-        if (!req.file) {
+        if (!req.file || !req.file.buffer) {
+            console.log('DEBUG: Skipping Cloudinary Upload (No file/buffer)');
             return next();
         }
 
@@ -71,7 +75,7 @@ const uploadToCloudinary = (folder) => {
         } catch (error) {
             console.error('Cloudinary upload middleware error DETAILS:', error);
             // Provide more descriptive error to help debug
-            const errorMessage = error.message || 'Failed to upload image to Cloudinary';
+            const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
             next(new ApiError(500, `Cloudinary Upload Error: ${errorMessage}`));
         }
     };

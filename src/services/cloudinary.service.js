@@ -41,18 +41,20 @@ const uploadToCloudinary = async (fileBuffer, folder, publicId = null) => {
             uploadOptions,
             (error, result) => {
                 if (error) {
-                    console.error('Cloudinary upload error details:', JSON.stringify(error, null, 2));
+                    console.error('Cloudinary upload stream callback error:', error);
                     reject(error);
                 } else {
+                    console.log('Cloudinary upload stream success!');
                     resolve(result);
                 }
             }
         );
 
         // Convert buffer to stream and pipe to Cloudinary
+        console.log('DEBUG: piping buffer to cloudinary upload stream...');
         const stream = Readable.from(fileBuffer);
         stream.on('error', (err) => {
-            console.error('Buffer stream error:', err);
+            console.error('Buffer stream internal error:', err);
             reject(err);
         });
         stream.pipe(uploadStream);
