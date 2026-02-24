@@ -186,7 +186,7 @@ const markLeadLater = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get vendor booking history (including Later)
+ * Get vendor booking history (excluding pending_acceptance/Later)
  */
 const getVendorHistory = asyncHandler(async (req, res) => {
     const vendorId = req.user?._id || req.user?.userId;
@@ -195,6 +195,19 @@ const getVendorHistory = asyncHandler(async (req, res) => {
 
     res.status(200).json(
         new ApiResponse(200, result, 'Vendor booking history retrieved successfully')
+    );
+});
+
+/**
+ * Get vendor later bookings list
+ */
+const getVendorLaterBookings = asyncHandler(async (req, res) => {
+    const vendorId = req.user?._id || req.user?.userId;
+
+    const result = await bookingService.getVendorLaterBookings(vendorId);
+
+    res.status(200).json(
+        new ApiResponse(200, result, 'Vendor later bookings retrieved successfully')
     );
 });
 
@@ -213,5 +226,6 @@ module.exports = {
     getBookingById,
     getCompletedHistory,
     getVendorHistory,
+    getVendorLaterBookings,
     retrySearch
 };

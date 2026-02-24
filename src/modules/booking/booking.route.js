@@ -15,7 +15,7 @@ router.post('/accept/:bookingId', authenticate, bookingController.acceptLead);
 router.post('/reject/:id', authenticate, bookingController.rejectLead);
 router.post('/later/:id', authenticate, bookingController.markLeadLater);
 router.get('/vendor/history', authenticate, bookingController.getVendorHistory);
-
+router.get('/vendor/later', authenticate, bookingController.getVendorLaterBookings);
 /**
  * USER – BOOKING FLOW
  */

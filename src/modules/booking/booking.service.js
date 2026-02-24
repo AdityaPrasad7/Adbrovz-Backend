@@ -332,7 +332,22 @@ const getVendorBookingHistory = async (vendorId) => {
         .populate('user', 'name phoneNumber photo')
         .sort({ createdAt: -1 });
 
-    // 4. Later Bookings (Only those still pending acceptance!)
+    const categorized = {
+        pending: activeAndHistoryBookings.filter(b => ['pending', 'on_the_way', 'arrived'].includes(b.status)),
+        ongoing: activeAndHistoryBookings.filter(b => b.status === 'ongoing'),
+        completed: activeAndHistoryBookings.filter(b => b.status === 'completed')
+    };
+
+    return categorized;
+};
+
+/**
+ * Get Vendor's Later Bookings List
+ */
+const getVendorLaterBookings = async (vendorId) => {
+    const vendorIdObj = new mongoose.Types.ObjectId(vendorId);
+
+    // Later Bookings (Only those still pending acceptance!)
     const laterBookings = await Booking.find({
         laterVendors: vendorIdObj,
         status: 'pending_acceptance'
@@ -341,14 +356,7 @@ const getVendorBookingHistory = async (vendorId) => {
         .populate('user', 'name phoneNumber photo')
         .sort({ createdAt: -1 });
 
-    const categorized = {
-        later: laterBookings,
-        pending: activeAndHistoryBookings.filter(b => ['pending', 'on_the_way', 'arrived'].includes(b.status)),
-        ongoing: activeAndHistoryBookings.filter(b => b.status === 'ongoing'),
-        completed: activeAndHistoryBookings.filter(b => b.status === 'completed')
-    };
-
-    return categorized;
+    return laterBookings;
 };
 
 /**
@@ -470,5 +478,6 @@ module.exports = {
     getBookingsByVendor,
     getCompletedBookingsByUser,
     getVendorBookingHistory,
+    getVendorLaterBookings,
     retrySearchVendors
 };
