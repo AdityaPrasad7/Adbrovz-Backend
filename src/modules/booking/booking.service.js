@@ -160,6 +160,8 @@ const generateBookingID = () => {
  * Create booking (full flow)
  */
 const createBooking = async (userId, bookingData) => {
+    console.log("createBooking CALLED. userId:", userId);
+    console.log("bookingData:", JSON.stringify(bookingData));
     const {
         services,
         date,
@@ -210,30 +212,143 @@ const createBooking = async (userId, bookingData) => {
     });
 
     if (confirmation === true) {
-        searchVendors(booking).catch(console.error);
+        searchVendors(booking, true).catch(console.error);
     }
 
     return booking;
 };
 
 /**
- * Vendor search (simplified)
+ * Vendor search and broadcast
  */
-const searchVendors = async (booking) => {
+const searchVendors = async (booking, broadcast = false) => {
     const radius = (await adminService.getSetting('bookings.vendor_search_radius_km')) || 5;
-    const vendors = await Vendor.find({
-        'dutyStatus.isOn': true,
+
+    const serviceIds = booking.services.map(s => s.service);
+    const ignoredVendors = [
+        ...(booking.rejectedVendors || []),
+        ...(booking.laterVendors || [])
+    ].map(id => id.toString());
+
+    const query = {
+        isOnline: true,
         isActive: true,
         isVerified: true,
         isSuspended: false,
-        isBlocked: false
-        // In a real app, you would add geo-spatial query here using radius
-    });
+        isBlocked: false,
+        selectedServices: { $in: serviceIds }
+    };
+
+    if (ignoredVendors.length > 0) {
+        query._id = { $nin: ignoredVendors };
+    }
+
+    const vendors = await Vendor.find(query).select('_id');
+
+    if (broadcast) {
+        try {
+            const { getVendorSockets, getIo } = require('../../socket');
+            const io = getIo();
+            let broadcastCount = 0;
+
+            vendors.forEach(v => {
+                const socketIds = getVendorSockets(v._id);
+                if (socketIds && socketIds.length > 0) {
+                    socketIds.forEach(socketId => {
+                        io.to(socketId).emit('new_booking_request', {
+                            bookingId: booking._id,
+                            bookingID: booking.bookingID,
+                            services: booking.services,
+                            scheduledDate: booking.scheduledDate,
+                            scheduledTime: booking.scheduledTime,
+                            location: booking.location,
+                            pricing: booking.pricing
+                        });
+                    });
+                    broadcastCount++;
+                }
+            });
+            console.log(`📡 Broadcasted booking ${booking._id} to ${broadcastCount} vendors via WebSocket.`);
+        } catch (error) {
+            console.error('Socket.io error during broadcast:', error.message);
+        }
+    }
 
     return vendors.map(v => ({
         vendorId: v._id,
         distance: 0 // Placeholder for real distance calculation
     }));
+};
+
+/**
+ * Reject a lead (Vendor rejects)
+ */
+const rejectLead = async (vendorId, bookingId) => {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) throw new ApiError(404, 'Booking not found');
+
+    if (!booking.rejectedVendors.includes(vendorId)) {
+        booking.rejectedVendors.push(vendorId);
+        await booking.save();
+    }
+
+    return { message: 'Booking rejected and removed from your list' };
+};
+
+/**
+ * Mark a lead as later (Vendor later)
+ */
+const markLeadLater = async (vendorId, bookingId) => {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) throw new ApiError(404, 'Booking not found');
+
+    // Only allow if it's still pending acceptance
+    if (booking.status !== 'pending_acceptance') {
+        throw new ApiError(400, 'Booking is no longer available');
+    }
+
+    if (!booking.laterVendors.includes(vendorId)) {
+        booking.laterVendors.push(vendorId);
+        await booking.save();
+    }
+
+    return { message: 'Booking saved for later' };
+};
+
+/**
+ * Get vendor booking history (including Later)
+ */
+const getVendorBookingHistory = async (vendorId) => {
+    const vendorIdObj = new mongoose.Types.ObjectId(vendorId);
+
+    // 1. Pending (Accepted by vendor but not started)
+    // 2. Ongoing (started)
+    // 3. Completed
+    const activeAndHistoryBookings = await Booking.find({
+        vendor: vendorIdObj,
+        status: { $in: ['pending', 'ongoing', 'completed', 'on_the_way', 'arrived'] }
+    })
+        .populate('services.service', 'title adminPrice photo')
+        .populate('user', 'name phoneNumber photo')
+        .sort({ createdAt: -1 });
+
+    // 4. Later Bookings (Only those still pending acceptance!)
+    const laterBookings = await Booking.find({
+        laterVendors: vendorIdObj,
+        status: 'pending_acceptance'
+    })
+        .populate('services.service', 'title adminPrice photo')
+        .populate('user', 'name phoneNumber photo')
+        .sort({ createdAt: -1 });
+
+    const categorized = {
+        later: laterBookings,
+        pending: activeAndHistoryBookings.filter(b => ['pending', 'on_the_way', 'arrived'].includes(b.status)),
+        ongoing: activeAndHistoryBookings.filter(b => b.status === 'ongoing'),
+        completed: activeAndHistoryBookings.filter(b => b.status === 'completed')
+    };
+
+    return categorized;
 };
 
 /**
@@ -332,7 +447,7 @@ const retrySearchVendors = async (userId, bookingId) => {
         throw new ApiError(400, 'Retry allowed only for pending bookings');
     }
 
-    const nearby = await searchVendors(booking);
+    const nearby = await searchVendors(booking, true);
     return { found: nearby.length > 0, count: nearby.length };
 };
 
@@ -340,6 +455,8 @@ module.exports = {
     // Lead flow
     requestLead,
     acceptLead,
+    rejectLead,
+    markLeadLater,
 
     // Booking flow
     createBooking,
@@ -352,5 +469,6 @@ module.exports = {
     getBookingsByUser,
     getBookingsByVendor,
     getCompletedBookingsByUser,
+    getVendorBookingHistory,
     retrySearchVendors
 };

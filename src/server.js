@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const app = require('./app');
 const config = require('./config/env');
+const { initSocket } = require('./socket');
 
 /**
  * Handle uncaught exceptions
@@ -35,6 +36,9 @@ const startServer = async () => {
     console.log(`🚀 Server running on port ${config.PORT}`);
     console.log(`📦 API: http://localhost:${config.PORT}/api/${config.API_VERSION}`);
   });
+
+  // Initialize Socket.io
+  initSocket(server);
 
   /**
    * Port already in use

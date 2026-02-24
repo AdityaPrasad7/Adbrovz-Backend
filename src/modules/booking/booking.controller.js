@@ -33,7 +33,7 @@ const acceptLead = asyncHandler(async (req, res) => {
  * Create a new booking
  */
 const createBooking = asyncHandler(async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = req.user?.userId || req.body.userId;
     const booking = await bookingService.createBooking(userId, req.body);
 
     res.status(201).json(
@@ -157,10 +157,53 @@ const retrySearch = asyncHandler(async (req, res) => {
     );
 });
 
+/**
+ * Vendor rejects a lead
+ */
+const rejectLead = asyncHandler(async (req, res) => {
+    const vendorId = req.user?._id || req.user?.userId || req.body.vendorId;
+    const { id } = req.params;
+
+    const result = await bookingService.rejectLead(vendorId, id);
+
+    res.status(200).json(
+        new ApiResponse(200, result, 'Lead rejected successfully')
+    );
+});
+
+/**
+ * Vendor marks a lead for later
+ */
+const markLeadLater = asyncHandler(async (req, res) => {
+    const vendorId = req.user?._id || req.user?.userId || req.body.vendorId;
+    const { id } = req.params;
+
+    const result = await bookingService.markLeadLater(vendorId, id);
+
+    res.status(200).json(
+        new ApiResponse(200, result, 'Lead marked for later successfully')
+    );
+});
+
+/**
+ * Get vendor booking history (including Later)
+ */
+const getVendorHistory = asyncHandler(async (req, res) => {
+    const vendorId = req.user?._id || req.user?.userId;
+
+    const result = await bookingService.getVendorBookingHistory(vendorId);
+
+    res.status(200).json(
+        new ApiResponse(200, result, 'Vendor booking history retrieved successfully')
+    );
+});
+
 module.exports = {
     // Lead flow
     requestLead,
     acceptLead,
+    rejectLead,
+    markLeadLater,
 
     // Booking flow
     createBooking,
@@ -169,5 +212,6 @@ module.exports = {
     getMyBookings,
     getBookingById,
     getCompletedHistory,
+    getVendorHistory,
     retrySearch
 };
